@@ -9,3 +9,5 @@ I created a html/rmarkdown file to explore the databases and to make Word-compat
 - Link to the outline/draft: https://docs.google.com/document/d/1Ve1iRiVqhL-jpKFY5x0dZGl_irYQpUeW_FmIMxlinK8/edit?usp=sharing
 
 - Notes on the literature on diplomacy (in progress): https://docs.google.com/document/d/10stYnmi4122yy8v10FoHj-9YBbFBWtHEM-3h3e_x-IU/edit?usp=sharing
+
+- Notes on foreign policy events in the 1970s: https://docs.google.com/document/d/1J6abyWf8cuLY4-dySXti-KskrCneEtPkP8iHrrhSxQQ/edit?usp=sharing
