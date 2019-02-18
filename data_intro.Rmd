@@ -500,6 +500,12 @@ stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, glm.nb_sos1, glm.nb_sos2, glm.n
           dep.var.labels=c("Number of Cables Tagged"),
           #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
           out="cable_n_visit.html")
+
+stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, glm.nb_sos1, glm.nb_sos2, glm.nb_sos3, 
+          type="text",
+          dep.var.labels=c("Number of Cables Tagged"),
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          out="cable_n_visit.txt")
 ```
 
 
