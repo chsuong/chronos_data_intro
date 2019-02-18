@@ -40,7 +40,7 @@ library(MASS) #Negative binomial models
 library(stargazer)
 
 getwd()
-setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #Set the working directory in the location where you can save large data files (file size limitation at Github)
+#setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #Set the working directory in the location where you can save large data files with file size over 100mb (github limitation).
 #Create a folder named "data_comparison" in the working directory
 ```
 
@@ -330,13 +330,13 @@ us_dip_rep_afghan<-
 ```{r results="hide"}
 
 #Save the dta file as a csv file
-#write.csv(read.dta("diplomatic_core.replication.dta"),"/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/data_comparison/lebovic_saunders_2016/diplomatic_core.replication.csv")
+#write.csv(read.dta("diplomatic_core.replication.dta"),"./data_comparison/lebovic_saunders_2016/diplomatic_core.replication.csv")
 
 #Note that the paper (LEBOVIC AND SAUNDERS 2016) mentions the variable for crisis (Crisis Shocks from the International Crisis Behavior Project) but the dataset actually does not include it. The paper notes that "regularized patterns [of U.S. diplomatic visits] that we discern are not products of crisis diplomacy and that crises do not strongly affect the results" (p.119).
 us_dip_vis<-
   read_csv("./data_comparison/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
   filter(year>1969 & year<1981) %>%
-  dplyr::select(cowid, year, bi_PRE, bi_SOS, mil_ratio, USmilaid, allies, USdefense, USdefense_EUR, UStrade, energypc, USalign, UNpart, mpower, term2, TRU, EIS, KEN, JOH, NIX, FOR, CAR, demo, bi_L1_PRE, EUR, AFR, MEA, SCA, EAP, bi_L14_SOS, bi_L14_PRE, bi_L58_SOS, bi_L58_PRE) %>%
+  dplyr::select(cowid, year, bi_PRE, bi_SOS, mil_ratio, USmilaid, allies, USdefense, USdefense_EUR, UStrade, energypc, USalign, UNpart, mpower, term2, NIX, FOR, CAR, demo, bi_L1_PRE, EUR, AFR, MEA, SCA, EAP, bi_L14_SOS, bi_L14_PRE, bi_L58_SOS, bi_L58_PRE) %>%
   left_join(cow, by=c("cowid"="CCode"))  %>%
   mutate(un_member= ifelse(!is.na(UNpart),1, NA)) #Check whether newly admitted states participate in UN voting only the year after
 
@@ -440,14 +440,11 @@ icb<-
 
 #Compare the monthly cable traffic with the data on international crises
 ```{r}
-tag_doc2_m<-
-  tag_doc2 %>%
-  group_by(ym) %>%
-  tally() 
+
 ```
 
 #Compare the yearly cable traffic with the country-year data on diplomatic visits
-```{r}
+```{r, results="hide",warning=FALSE,message=FALSE}
 cable_n_vis_country_y<-
   cable_n_country_date %>%
   mutate(year=lubridate::year(date)) %>%
@@ -456,34 +453,53 @@ cable_n_vis_country_y<-
   rename(cowid=cow_ccode) %>%
   inner_join(us_dip_vis, by=c("year", "cowid")) 
 
-summary(glm.nb_pre1 <- glm.nb(y_n~bi_PRE, data = cable_n_vis_country_y))
-summary(glm.nb_sos1 <- glm.nb(y_n~bi_SOS, data = cable_n_vis_country_y))
+glm.nb_pre1 <- glm.nb(y_n~bi_PRE, data = cable_n_vis_country_y)
+glm.nb_sos1 <- glm.nb(y_n~bi_SOS, data = cable_n_vis_country_y)
 
-#Modified from the analysis in Lebovic and Saunders (2016)' Tables 3 and 4
-summary(glm.nb_pre2 <- glm.nb(y_n~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+term2+TRU+EIS+KEN+JOH+NIX+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y))
+#Slightly modified from the analysis in Lebovic and Saunders (2016)' Tables 3 and 4
+glm.nb_pre2 <- glm.nb(y_n~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+term2+NIX+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
-summary(glm.nb_sos2 <- glm.nb(y_n~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+term2+TRU+EIS+KEN+JOH+NIX+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y))
+glm.nb_sos2 <- glm.nb(y_n~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+term2+NIX+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
-summary(glm.nb_pre3 <- glm.nb(y_n~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+term2+TRU+EIS+KEN+JOH+NIX+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y))
+glm.nb_pre3 <- glm.nb(y_n~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+term2+NIX+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
-summary(glm.nb_pre3 <- glm.nb(y_n~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+term2+TRU+EIS+KEN+JOH+NIX+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y))
+glm.nb_sos3 <- glm.nb(y_n~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+term2+NIX+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
 #Check model assumptions and robustness (https://stats.idre.ucla.edu/r/dae/negative-binomial-regression/)
 
 #Descriptive statistics
-stargazer(as.data.frame(cable_n_vis_country_y), type = "text", 
+stargazer(as.data.frame(cable_n_vis_country_y), 
+          type = "html", 
           title="Descriptive statistics", 
           digits=1, 
-          out="desc_country_year.txt"#,
+          out="desc_cable_n_vis_country_year.html"#,
           #covariate.labels=c("Miles/(US)gallon",)
           )
 
+#Negotive binomial regression models
+stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, 
+          type="html",
+          dep.var.labels=c("Number of Cables Tagged")#,
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          #out="cable_n_pres_visit.html"
+          )
 
+stargazer(glm.nb_sos1, glm.nb_sos2, glm.nb_sos3, 
+          type="html",
+          dep.var.labels=c("Number of Cables Tagged") #,
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          #out="cable_n_sos_visit.html"
+          )
 
+stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, glm.nb_sos1, glm.nb_sos2, glm.nb_sos3, 
+          type="html",
+          dep.var.labels=c("Number of Cables Tagged"),
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          out="cable_n_visit.html")
 ```
 
 
