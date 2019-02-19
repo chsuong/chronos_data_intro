@@ -40,13 +40,15 @@ library(MASS) #Negative binomial models
 library(stargazer)
 
 getwd()
-#setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #Set the working directory in the location where you can save large data files with file size over 100mb (github limitation).
-#Create a folder named "data_comparison" in the working directory
+setwd(dirname(getwd()))
+getwd()
+#setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #If necessary, set as the working directory a location where you can save large data files with file size over 100mb (github limitation).
+#Create a folder named "external_data" in the working directory
 ```
 
-##Databases and external datasets
+#Databases and external datasets
 
-#Our MySQL databases
+##Our MySQL databases
 * declassification_cables
 * declassification_ddrs
 * declassification_frus
@@ -56,7 +58,7 @@ getwd()
 * declassification_cabinet
 * declassification_cpdoc
 
-#Key fields/variables in our database 'declassification_cables'
+##Key fields/variables in our database 'declassification_cables'
 * body
 * subject
 * date (year)
@@ -81,8 +83,8 @@ getwd()
 * Cf. label dictionary: 
 https://docs.google.com/document/d/13iM00ZfVzV-6mGw8YBGkJFnJFkLe011znb3LQenaIjM/edit?usp=sharing 
 
-#External datasets:
-* Download the following datasets in the folder "data_comparison"
+##External datasets:
+* Download the following datasets in the folder "external_data"
 * COW country codes (cow): http://www.correlatesofwar.org/data-sets/cow-country-codes/cow-country-codes/at_download/file
 * U.S. diplomatic representation (us_dip_rep; COW-compatible version): https://www.dropbox.com/sh/2wnklx04vblnmi1/AABmMxbxvja_JVStsxKD4F2Qa?dl=0
 * U.S. diplomatic visits (us_dip_vis): https://tinyurl.com/yyedcahu
@@ -127,7 +129,7 @@ print(dbGetQuery(mydb, "Describe docs;"))
 ```
 
 ##Examine the different country codes across datasets
-```{r results="hide"}
+```{r, results='hide', message=FALSE, warning=FALSE}
 #Re-connect to the database
 driver = dbDriver("MySQL")
 connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
@@ -143,7 +145,7 @@ countries2<-
   mutate(country_id=as.integer(id)) %>%
   dplyr::select(-id)
 
-cow<-read_csv("./data_comparison/cow/COW country codes.csv") %>%
+cow<-read_csv("../external_data/cow/COW country codes.csv") %>%
   distinct()
 
 #Merge ISO_3166_1 and ISO_3166_3 (ISO country codes for withdrawn countries). Note that this list often omits retired codes. 
@@ -184,8 +186,8 @@ countries2<-
 
 ##Cable Traffic
 
-#Download, save, or load the tables for tags and docs (doc_id and date) in the working directory and count the number of cables tagged for each country
-```{r results="hide"}
+###Download, save, or load the tables for tags and docs (doc_id and date) in the working directory and count the number of cables tagged for each country
+```{r results='hide', message=FALSE, warning=FALSE}
 #Re-connect to the database
 #driver = dbDriver("MySQL")
 #connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
@@ -193,15 +195,15 @@ countries2<-
 
 tags<-
   tbl(mydb, 'tags') %>% 
-  dplyr::select(id, tag, category) #%>% collect()
+  dplyr::select(id, tag, category) %>% collect()
 
 tag_doc<-
-  tbl(mydb, 'tag_doc') #%>% collect()
+  tbl(mydb, 'tag_doc') %>% collect()
 
 doc_date2<-
   tbl(mydb, 'docs') %>% 
   dplyr::select(id, date) %>%
-  rename(doc_id=id) #%>% collect()
+  rename(doc_id=id) %>% collect()
 
 #tag_doc2<-
 #  tag_doc%>%
@@ -213,14 +215,14 @@ doc_date2<-
 #         ym=as.yearmon(paste(year, month),"%Y %m")
 #         ) %>%
 #  collect() 
-#save(tag_doc2, file = "tag_doc2.RData")
-load("tag_doc2.RData")
+#save(tag_doc2, file = "../data/tag_doc2.RData")
+load("../data/tag_doc2.RData")
 
 #tag_doc2_country <-
 #  tag_doc2 %>%
 #  inner_join(countries2, by="tag_id") 
-#save(tag_doc2_country, file = "tag_doc2_country.RData")
-load("tag_doc2_country.RData")
+#save(tag_doc2_country, file = "../data/tag_doc2_country.RData")
+load("../data/tag_doc2_country.RData")
 
 #cable_n_country_date<-
 #  tag_doc2_country %>%
@@ -230,12 +232,12 @@ load("tag_doc2_country.RData")
 #                   "country_name", 
 #                   "date")) %>%
 #  tally() 
-#save(cable_n_country_date, file = "cable_n_country_date.RData")
-load("cable_n_country_date.RData")
+#save(cable_n_country_date, file = "../data/cable_n_country_date.RData")
+load("../data/cable_n_country_date.RData")
 ```
 
-```{r echo=FALSE}
-#Examine cables tagged China, North Korea, and Vietnam as a test
+###Examine cables tagged with certain countries as a test
+```{r}
 
 #Check tag_id for certain countries
 countries2%>%filter(str_detect(country_name, 'China'))
@@ -290,11 +292,11 @@ cable_egypt<-
   tally() 
 ```
 
-##Import and load the data for U.S. diplomatic representation
-```{r results="hide"}
+#Import and load the data for U.S. diplomatic representation
+```{r results='hide', message=FALSE, warning=FALSE}
 us_dip_rep<-
-  read_csv("./data_comparison/moyeretal2016/Pardee Center Diplomatic Representation_COW 20190208.csv", locale = locale(encoding = "UTF-8")) %>% #COW-compatible version
-#  read_excel("./data_comparison/moyeretal2016/Diplomatic_Exchange_V3.16.16.xlsx") %>% #Non-compatible, public version
+  read_csv("../external_data/moyeretal2016/Pardee Center Diplomatic Representation_COW 20190208.csv", locale = locale(encoding = "UTF-8")) %>% #COW-compatible version
+#  read_excel("../external_data/moyeretal2016/Diplomatic_Exchange_V3.16.16.xlsx") %>% #Non-compatible, public version
   mutate(Year=as.numeric(Year)) %>%
   rename(year = Year) %>%
   filter(Country=="United States of America" & year>1969 & year<1981) %>%
@@ -303,7 +305,8 @@ us_dip_rep<-
   left_join(countries2, by=c("Destination"="cow_statename"))  
 ```
 
-```{r echo=FALSE}
+##Examine cables tagged with certain countries as a test
+```{r}
 #Examine some countries
 us_dip_rep_china<-
   filter(us_dip_rep, cow_ccode==710) %>%
@@ -326,15 +329,14 @@ us_dip_rep_afghan<-
 #No formal relations between the U.S. and North Korea
 ```  
   
-##Import and load the data on U.S. diplomatic visits
-```{r results="hide"}
-
+#Import and load the data on U.S. diplomatic visits
+```{r results='hide', message=FALSE, warning=FALSE}
 #Save the dta file as a csv file
-#write.csv(read.dta("diplomatic_core.replication.dta"),"./data_comparison/lebovic_saunders_2016/diplomatic_core.replication.csv")
+#write.csv(read.dta("diplomatic_core.replication.dta"),"../external_data/lebovic_saunders_2016/diplomatic_core.replication.csv")
 
 #Note that the paper (LEBOVIC AND SAUNDERS 2016) mentions the variable for crisis (Crisis Shocks from the International Crisis Behavior Project) but the dataset actually does not include it. The paper notes that "regularized patterns [of U.S. diplomatic visits] that we discern are not products of crisis diplomacy and that crises do not strongly affect the results" (p.119).
 us_dip_vis<-
-  read_csv("./data_comparison/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
+  read_csv("../external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
   filter(year>1969 & year<1981) %>%
   dplyr::select(cowid, year, bi_PRE, bi_SOS, mil_ratio, USmilaid, allies, USdefense, USdefense_EUR, UStrade, energypc, USalign, UNpart, mpower, term2, NIX, FOR, CAR, demo, bi_L1_PRE, EUR, AFR, MEA, SCA, EAP, bi_L14_SOS, bi_L14_PRE, bi_L58_SOS, bi_L58_PRE) %>%
   left_join(cow, by=c("cowid"="CCode"))  %>%
@@ -343,8 +345,8 @@ us_dip_vis<-
 #a<-us_dip_vis[us_dip_vis$UNpart==0,]
 ```
 
-```{r echo=FALSE}
-#Examine some countries
+###Examine cables tagged with certain countries as a test
+```{r}
 
 us_dip_vis_china<-
   filter(us_dip_vis, cowid==710)
@@ -368,10 +370,10 @@ us_dip_vis_east_germany<-
   filter(us_dip_vis, cowid==265)
 ```
 
-##Import and load the data on US diplomatic events
+#Import and load the data on US diplomatic events
 ```{r results="hide"}
 us_dip_evt<-
-  read_csv("./data_comparison/carter2018/AmericanDiplomacyDataset.csv") 
+  read_csv("../external_data/carter2018/AmericanDiplomacyDataset.csv") 
 
 #Check whether the country abbreviations are from COW or ISO-3166.
 all(us_dip_evt$source %in% countries2$cow_stateabb)
@@ -395,7 +397,7 @@ us_dip_evt[us_dip_evt$source %in% setdiff(us_dip_evt$source, iso_3166$Alpha_3),]
 #It looks like the variables "target" and "source" in the dataset are "the 2-character FIPS10-4 country code for the location" (http://data.gdeltproject.org/documentation/ISA.2013.GDELT.pdf). But these seem to overlap a lot with iso3c
 
 us_dip_evt2<-
-  read_csv("./data_comparison/carter2018/AmericanDiplomacyDataset.csv") %>%
+  read_csv("../external_data/carter2018/AmericanDiplomacyDataset.csv") %>%
 #  filter(1969<year & year<1980) %>%
   mutate(ym=as.yearmon(date, "%Y %m"), 
        cow_ccode_source=countrycode(source, 'iso3c','cown'),
@@ -404,10 +406,6 @@ us_dip_evt2<-
          cow_ccode_target = replace(cow_ccode_target, target=="YUG", 345), #The function countrycode did not identify "YUG" as Serbia, then part of Yugoslavia.
          cow_ccode_source= replace(cow_ccode_source, source=="SER", 345), #The function countrycode did not identify "SER" as Serbia, then part of Yugoslavia.
          cow_ccode_target = replace(cow_ccode_target, target=="SER", 345)) #The function countrycode did not identify "SER" as Serbia, then part of Yugoslavia.
-
-#Typos in the dataset
-#Make empathetic commment
-
 
 #Entities with missing COW country codes are non-state. Let's drop or fix them.
 table(us_dip_evt[is.na(us_dip_evt$cow_ccode_source),]$source)
@@ -424,10 +422,10 @@ table(us_dip_evt[is.na(us_dip_evt$cow_ccode_target),]$target)
 #YUG: Transitional reservations for former Yugoslavia/Serbia and Montenegro (https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3 https://wits.worldbank.org/wits/wits/witshelp/content/codes/country_codes.htm)
 ```
 
-##Import and load the data on international crises
+#Import and load the data on international crises
 ```{r results="hide"}
 icb<-
-  read_csv("./data_comparison/icb/icb2v12.csv") %>%
+  read_csv("../external_data/icb/icb2v12.csv") %>%
 #Rule out crises that end before 1970 and crises that start after 1979
   filter(yrterm>1969 & systrgyr<1980) %>%
   mutate(ym_term=as.yearmon(paste(yrterm, moterm),"%Y %m"), 
@@ -476,36 +474,36 @@ stargazer(as.data.frame(cable_n_vis_country_y),
           type = "html", 
           title="Descriptive statistics", 
           digits=1, 
-          out="desc_cable_n_vis_country_year.html"#,
+          out="../data_analysis_output/desc_cable_n_vis_country_year.html"#,
           #covariate.labels=c("Miles/(US)gallon",)
           )
 
 #Negotive binomial regression models
 stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, 
           type="html",
-          dep.var.labels=c("Number of Cables Tagged")#,
+          dep.var.labels=c("Number of Cables Tagged"),
           #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
-          #out="cable_n_pres_visit.html"
+          out="../data_analysis_output/cable_n_pres_visit.html"
           )
 
 stargazer(glm.nb_sos1, glm.nb_sos2, glm.nb_sos3, 
           type="html",
-          dep.var.labels=c("Number of Cables Tagged") #,
+          dep.var.labels=c("Number of Cables Tagged"),
           #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
-          #out="cable_n_sos_visit.html"
+          out="../data_analysis_output/cable_n_sos_visit.html"
           )
 
 stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, glm.nb_sos1, glm.nb_sos2, glm.nb_sos3, 
           type="html",
           dep.var.labels=c("Number of Cables Tagged"),
           #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
-          out="cable_n_visit.html")
+          out="../data_analysis_output/cable_n_visit.html")
 
 stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, glm.nb_sos1, glm.nb_sos2, glm.nb_sos3, 
           type="text",
           dep.var.labels=c("Number of Cables Tagged"),
           #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
-          out="cable_n_visit.txt")
+          out="../data_analysis_output/cable_n_visit.txt")
 ```
 
 
