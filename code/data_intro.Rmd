@@ -83,7 +83,7 @@ getwd()
 * Cf. label dictionary: 
 https://docs.google.com/document/d/13iM00ZfVzV-6mGw8YBGkJFnJFkLe011znb3LQenaIjM/edit?usp=sharing 
 
-##External datasets:
+##External dataset source:
 * Download the following datasets in the folder "external_data"
 * COW country codes (cow): http://www.correlatesofwar.org/data-sets/cow-country-codes/cow-country-codes/at_download/file
 * U.S. diplomatic representation (us_dip_rep; COW-compatible version): https://www.dropbox.com/sh/2wnklx04vblnmi1/AABmMxbxvja_JVStsxKD4F2Qa?dl=0
