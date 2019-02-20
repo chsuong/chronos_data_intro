@@ -305,9 +305,9 @@ cable_n_country_y<-
 ```{r, results="hide",message=FALSE}
 stargazer(as.data.frame(cable_n_country_y), 
           type = "html", 
-          title="Descriptive statistics", 
+          title="Descriptive statistics of yearly cable traffic", 
           digits=1, 
-          out="../data_analysis_output/desc_cable_n_country_year.html"#,
+          out="../data_analysis_output/desc_cable_n_country_y.html"#,
           #covariate.labels=c("Miles/(US)gallon",)
           )
 ```
