@@ -366,29 +366,21 @@ us_dip_rep_afghan<-
 #No formal relations between the U.S. and North Korea
 ```  
   
-#Import and load the data on U.S. diplomatic appointments
+#Import and load the data on U.S. diplomatic appointments and inferred representation
 ```{r}  
-#Save the dta file as a csv file
+#Save the dta file as a csv file and read in the csv file
 #write.csv(read.dta("../external_data/arias_smith_2018/ambassadors.dta"),"../external_data/arias_smith_2018/ambassadors.csv")
 
-us_dip_app <-  
+us_dip_irep_app <-  
   read_csv("../external_data/arias_smith_2018/ambassadors.csv", guess_max = 100000) %>%
   filter(year>1969 & year<1981) %>%
   dplyr::select(year, ccode, country_ambassador, position, ambassador, politicalappointee,good, bad) %>%
-  rename(cow_ccode=ccode)
-  left_join()
-#Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later.  
+  rename(cow_ccode=ccode, ambassador_name=ambassador) %>%
+  right_join(countries3, by=c("cow_ccode", "year")) %>% #Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later.  
+  arrange(cow_ccode, year) %>%
+  mutate(dip_irep=ifelse(is.na(country_ambassador),0, 1)) %>% #Created a variable for inferred US representation. Check this variable against the dataset by Moyer 2016. There may be a discrepancy due to bureaucratic delays and so on. For instance, there may be a diplomatic relationship but there is a delay in confirming him/her and the DCM serves as CM instead. 
+  mutate(ambassador=ifelse(position=="Ambassador Extraordinary and Plenipotentiary",1, 0))
   
-  
-```
-
-```{r}
-%>%     mutate(Year=as.numeric(Year)) %>%
-  rename(year = Year) %>%
-  filter(Country=="United States of America" & year>1969 & year<1981) %>%
-#  filter(Country=="United States of America") %>% 
-  mutate(date = ymd(paste0(year, "-", 06, "-", 01))) %>% #us_dip_rep[is.na(us_dip_rep$cow_ccode),] COW country code for East Germany is missing.
-  left_join(countries2, by=c("Destination"="cow_statename"))
 ```
 
 #Import and load the data on U.S. diplomatic visits
@@ -501,6 +493,90 @@ icb<-
 #Compare the monthly cable traffic with the data on international crises
 ```{r}
 
+```
+
+#Compare the yearly cable traffic with the country-year data on (inferred) diplomatic representation
+```{r, results="hide",warning=FALSE,message=FALSE}
+cable_n_irep_app<-
+  cable_n_country_y %>%
+  inner_join(us_dip_irep_app, by=c("year", "cow_ccode")) 
+
+glm.nb_irep1 <- glm.nb(y_n~dip_irep, data = cable_n_irep_app)
+
+glm.nb_amb <- glm.nb(y_n~ambassador, data = cable_n_irep_app)
+
+glm.nb_politicalappointee <- glm.nb(y_n~politicalappointee, data = cable_n_irep_app)
+
+glm.nb_good <- glm.nb(y_n~good, data = cable_n_irep_app)
+
+glm.nb_bad <- glm.nb(y_n~bad, data = cable_n_irep_app)
+
+stargazer(glm.nb_irep1,
+          glm.nb_amb,
+          glm.nb_politicalappointee, 
+          glm.nb_good,
+          glm.nb_bad,
+          type="text",
+          dep.var.labels=c("Number of Cables Tagged"),
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          out="../data_analysis_output/cable_n_irep_app.txt")
+
+stargazer(glm.nb_irep1,
+          glm.nb_amb,
+          glm.nb_politicalappointee, 
+          glm.nb_good,
+          glm.nb_bad,
+          type="html",
+          dep.var.labels=c("Number of Cables Tagged"),
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          out="../data_analysis_output/cable_n_irep_app.html")
+
+
+```
+
+#Slightly modified from the analysis in Lebovic and Saunders (2016)' Tables 3 and 4
+glm.nb_pre2 <- glm.nb(y_n~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+#Cluster by cowid
+
+glm.nb_sos2 <- glm.nb(y_n~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+#Cluster by cowid
+
+glm.nb_pre3 <- glm.nb(y_n~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+#Cluster by cowid
+
+glm.nb_sos3 <- glm.nb(y_n~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+#Cluster by cowid
+
+#Check model assumptions and robustness (https://stats.idre.ucla.edu/r/dae/negative-binomial-regression/)
+
+#Consider using the event count time series models PAR(p) and PEWMA models (http://www.utdallas.edu/~pbrandt/Patrick_Brandts_Website/Code_%26_Software.html) or negative binomials or tscount (https://cran.r-project.org/web/packages/tscount/vignettes/tsglm.pdf) for robustness check.
+
+#Negotive binomial regression models
+stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, 
+          type="html",
+          dep.var.labels=c("Number of Cables Tagged"),
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          out="../data_analysis_output/cable_n_pres_visit.html"
+          )
+
+stargazer(glm.nb_sos1, glm.nb_sos2, glm.nb_sos3, 
+          type="html",
+          dep.var.labels=c("Number of Cables Tagged"),
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          out="../data_analysis_output/cable_n_sos_visit.html"
+          )
+
+stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, glm.nb_sos1, glm.nb_sos2, glm.nb_sos3, 
+          type="html",
+          dep.var.labels=c("Number of Cables Tagged"),
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          out="../data_analysis_output/cable_n_visit.html")
+
+stargazer(glm.nb_irep1, glm.nb_app1,
+          type="text",
+          dep.var.labels=c("Number of Cables Tagged"),
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          out="../data_analysis_output/cable_n_irep_app.txt")
 ```
 
 #Compare the yearly cable traffic with the country-year data on diplomatic visits
