@@ -325,13 +325,13 @@ stargazer(as.data.frame(cable_n_country_y),
 
 #Import and load the COW data for U.S. diplomatic representation
 ```{r results='hide', message=FALSE, warning=FALSE}
-us_dip_rep1<-
+us_dip_rep_cow<-
   read_csv("../external_data/cow_diplomatic_exchange_2006.1/Diplomatic_Exchange_2006v1.csv", locale = locale(encoding = "UTF-8")) 
 ```
 
 #Import and load Moyer et al's data for U.S. diplomatic representation
 ```{r results='hide', message=FALSE, warning=FALSE}
-us_dip_rep2<-
+us_dip_rep_moyer<-
   read_csv("../external_data/moyeretal2016/Pardee Center Diplomatic Representation_COW 20190208.csv", locale = locale(encoding = "UTF-8")) %>% #COW-compatible version
 #  read_excel("../external_data/moyeretal2016/Diplomatic_Exchange_V3.16.16.xlsx") %>% #Non-compatible, public version
   mutate(Year=as.numeric(Year)) %>%
