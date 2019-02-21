@@ -147,6 +147,18 @@ countries2<-
 cow<-read_csv("../external_data/cow/COW country codes.csv") %>%
   distinct()
 
+#Generate a list of existing country-year pairs for the 1970s (a universe of all possbiel diplomatic relations).
+#states_y<-
+#  read_csv("../external_data/cow/states2016.csv") %>%
+#  select(stateabb, ccode, statenme, styear, endyear) %>%
+#  mutate
+
+countries3<-
+  read_csv("../external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
+  filter(year>1969 & year<1981) %>%
+  dplyr::select(cowid, year) %>%
+  rename(cow_ccode=cowid)#Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later. 
+
 #Merge ISO_3166_1 and ISO_3166_3 (ISO country codes for withdrawn countries). Note that this list often omits retired codes. 
 
 iso_3166<-
@@ -311,9 +323,15 @@ stargazer(as.data.frame(cable_n_country_y),
           )
 ```
 
-#Import and load the data for U.S. diplomatic representation
+#Import and load the COW data for U.S. diplomatic representation
 ```{r results='hide', message=FALSE, warning=FALSE}
-us_dip_rep<-
+us_dip_rep1<-
+  read_csv("../external_data/cow_diplomatic_exchange_2006.1/Diplomatic_Exchange_2006v1.csv", locale = locale(encoding = "UTF-8")) 
+```
+
+#Import and load Moyer et al's data for U.S. diplomatic representation
+```{r results='hide', message=FALSE, warning=FALSE}
+us_dip_rep2<-
   read_csv("../external_data/moyeretal2016/Pardee Center Diplomatic Representation_COW 20190208.csv", locale = locale(encoding = "UTF-8")) %>% #COW-compatible version
 #  read_excel("../external_data/moyeretal2016/Diplomatic_Exchange_V3.16.16.xlsx") %>% #Non-compatible, public version
   mutate(Year=as.numeric(Year)) %>%
@@ -328,20 +346,20 @@ us_dip_rep<-
 ```{r}
 #Examine some countries
 us_dip_rep_china<-
-  filter(us_dip_rep, cow_ccode==710) %>%
+  filter(us_dip_rep2, cow_ccode==710) %>%
   mutate(dip_rep=ifelse(`Embassy New`==6,1, NA))
 
 #Note that the dataset is inaccurately referring to South Vietnam as Vietnam.
 #us_dip_rep_viet<-
-#  filter(us_dip_rep, cow_ccode==816) %>%
+#  filter(us_dip_rep2, cow_ccode==816) %>%
 #  mutate(dip_rep=ifelse(`Embassy New`==6,1, NA))
 
 us_dip_rep_iran<-
-  filter(us_dip_rep, cow_ccode==630) %>%
+  filter(us_dip_rep2, cow_ccode==630) %>%
   mutate(dip_rep=ifelse(`Embassy New`==6,1, NA))
 
 us_dip_rep_afghan<-
-  filter(us_dip_rep, cow_ccode==700) %>%
+  filter(us_dip_rep2, cow_ccode==700) %>%
   mutate(dip_rep=ifelse(`Embassy New`==6,1, NA))
 
 #No diplomatic relations between the U.S. and (North) Vietnam until 1995
@@ -355,11 +373,16 @@ us_dip_rep_afghan<-
 
 us_dip_app <-  
   read_csv("../external_data/arias_smith_2018/ambassadors.csv", guess_max = 100000) %>%
-  select(year, ccode, country_ambassador, )
+  filter(year>1969 & year<1981) %>%
+  dplyr::select(year, ccode, country_ambassador, position, ambassador, politicalappointee,good, bad) %>%
+  rename(cow_ccode=ccode)
+  left_join()
+#Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later.  
   
   
 ```
 
+```{r}
 %>%     mutate(Year=as.numeric(Year)) %>%
   rename(year = Year) %>%
   filter(Country=="United States of America" & year>1969 & year<1981) %>%
@@ -369,7 +392,7 @@ us_dip_app <-
 ```
 
 #Import and load the data on U.S. diplomatic visits
-```{r results='hide', message=FALSE, warning=FALSE}
+```{r, results='hide', message=FALSE, warning=FALSE}
 #Save the dta file as a csv file
 #write.csv(read.dta("diplomatic_core.replication.dta"),"../external_data/lebovic_saunders_2016/diplomatic_core.replication.csv")
 
@@ -378,8 +401,8 @@ us_dip_vis<-
   read_csv("../external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
   filter(year>1969 & year<1981) %>%
   dplyr::select(cowid, year, bi_PRE, bi_SOS, mil_ratio, USmilaid, allies, USdefense, USdefense_EUR, UStrade, energypc, USalign, UNpart, mpower, term2, NIX, FOR, CAR, demo, bi_L1_PRE, EUR, AFR, MEA, SCA, EAP, bi_L14_SOS, bi_L14_PRE, bi_L58_SOS, bi_L58_PRE) %>%
-  left_join(cow, by=c("cowid"="CCode"))  %>%
-  mutate(un_member= ifelse(!is.na(UNpart),1, NA)) #Check whether newly admitted states participate in UN voting only the year after
+  left_join(cow, by=c("cowid"="CCode"))  #%>%
+  #mutate(un_member= ifelse(!is.na(UNpart),1, NA)) #Check whether newly admitted states participate in UN voting only the year after
 
 #a<-us_dip_vis[us_dip_vis$UNpart==0,]
 ```
