@@ -3,16 +3,17 @@ title: "data_intro"
 author: "Clara Suong"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
+  word_document: default
   pdf_document: default
-  html_document: default
   toc: yes
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-##Load libraries and set the working directory
+#Load libraries and set the working directory
 ```{r, results='hide', message=FALSE, warning=FALSE}
 rm(list = ls()) 
 library(plyr)
@@ -34,13 +35,14 @@ library(ggplot2)
 library(reshape2)
 library(readxl)
 library(countrycode) #For reconciling different country codes across dataset
-library(fuzzyjoin) #For reconciling different country codes across dataset
+#library(fuzzyjoin) #For reconciling different country codes across dataset
 library(ISOcodes) #A package for ISO country codes
 library(MASS) #Negative binomial models
 library(stargazer)
 
 getwd()
 setwd(dirname(getwd()))
+getwd()
 #setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #If necessary, set as the working directory a location where you can save large data files with file size over 100 mb (github limitation).
 #Create a folder named "external_data" in the working directory
 ```
@@ -138,29 +140,13 @@ countries<-
   tbl(mydb, 'countries') %>% 
   collect() #Note that there is no tag for "South Vietnam" but tag "VM" (id: 557) for "Vietnam" accoring to this table. There is also no tag for Serbia and Montenegro.
 
-countries2<-
-  tbl(mydb, 'countries') %>% 
-  collect() %>%
-  mutate(country_id=as.integer(id)) %>%
-  dplyr::select(-id)
+#Create a tibble dataframe of various country codes and cable tag ids
+#Note that this includes country codes and tag id for the US.
 
 cow<-read_csv("../external_data/cow/COW country codes.csv") %>%
   distinct()
 
-#Generate a list of existing country-year pairs for the 1970s (a universe of all possbiel diplomatic relations).
-#states_y<-
-#  read_csv("../external_data/cow/states2016.csv") %>%
-#  select(stateabb, ccode, statenme, styear, endyear) %>%
-#  mutate
-
-countries3<-
-  read_csv("../external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
-  filter(year>1969 & year<1981) %>%
-  dplyr::select(cowid, year) %>%
-  rename(cow_ccode=cowid)#Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later. 
-
 #Merge ISO_3166_1 and ISO_3166_3 (ISO country codes for withdrawn countries). Note that this list often omits retired codes. 
-
 iso_3166<-
   tibble::as_tibble(left_join(ISO_3166_1, ISO_3166_3, by = c("Alpha_3","Numeric","Name")))%>%
   mutate(Numeric=as.integer(Numeric)) %>%
@@ -170,21 +156,27 @@ iso_3166<-
          "Official_name",
          "Common_name") 
 
+country_code_tag<-
+  tbl(mydb, 'countries') %>% 
+  collect() %>%
+  mutate(country_id=as.integer(id)) %>%
+  dplyr::select(-id)
+
 #Check whether the variable "country_id" in the table "countries" is from ISO 3166.
 #Derive COW country codes from the variable "name" in the table "countries."
-countries2$cow_ccode<-countrycode(countries2$name, 'country.name', 'cown') #cow_ccode for Vietnam should be 816, not 817 (error in the package countrycode) and cow_ccode for West Germany (German Federal Republic) should be 260.
-#countries2$cowid2<-countrycode(countries2$country_id, 'iso3n', 'cown')
-countries2$iso3n<-countrycode(countries2$name, 'country.name', 'iso3n') #iso3n for South Vietnam should not be 704 (country code of Vietnam) (error in the package countrycode).
+country_code_tag$cow_ccode<-countrycode(country_code_tag$name, 'country.name', 'cown') #cow_ccode for Vietnam should be 816, not 817 (error in the package countrycode) and cow_ccode for West Germany (German Federal Republic) should be 260.
+#country_code_tag$cowid2<-countrycode(country_code_tag$country_id, 'iso3n', 'cown')
+country_code_tag$iso3n<-countrycode(country_code_tag$name, 'country.name', 'iso3n') #iso3n for South Vietnam should not be 704 (country code of Vietnam) (error in the package countrycode).
 
-all(countries2$country_id %in% iso_3166$Numeric)
-all(iso_3166$Numeric %in% countries2$country_id)
-setdiff(countries2$country_id, iso_3166$Numeric)
-countries2[countries2$country_id %in% setdiff(countries2$country_id, iso_3166$Numeric),]
+all(country_code_tag$country_id %in% iso_3166$Numeric)
+all(iso_3166$Numeric %in% country_code_tag$country_id)
+setdiff(country_code_tag$country_id, iso_3166$Numeric)
+country_code_tag[country_code_tag$country_id %in% setdiff(country_code_tag$country_id, iso_3166$Numeric),]
 #Most of the items with a discrepancy between the database's country ids and iso-3166 numeric seem to be defunct states or non-state entities, except East and West Germany.
 
 #Focus on countries by dropping the observations with missing tag_id or COW country code.
-countries2<-
-  countries2[!is.na(countries2$cow_ccode) & !is.na(countries2$tag_id),] %>%
+country_code_tag<-
+  country_code_tag[!is.na(country_code_tag$cow_ccode) & !is.na(country_code_tag$tag_id),] %>%
   mutate(cow_ccode= replace(cow_ccode, name=="Vietnam", 816)) %>% #Fix cow_ccode for Vietnam 
   mutate(cow_ccode= replace(cow_ccode, name=="West Germany", 260)) %>% #Fix cow_ccode for West Germany (German Federal Republic) 
   left_join(cow, by=c("cow_ccode"="CCode")) %>% 
@@ -193,6 +185,22 @@ countries2<-
          cow_statename=StateNme) %>%
   dplyr::select(-iso3n) 
 #Germany and West Germany share their COW country codes.
+
+#Create a tibble dataframe of all countries that were potential diplomatic counterparts of the US in the 1970s
+
+#Generate a list of existing country-year pairs for the 1970s (a universe of all possbiel diplomatic relations).
+#states_y<-
+#  read_csv("../external_data/cow/states2016.csv") %>%
+#  select(stateabb, ccode, statenme, styear, endyear) %>%
+#  mutate
+
+#Note that this does NOT for the US.
+country_univ_70s<-
+  read_csv("../external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
+  filter(year>1969 & year<1981) %>%
+  dplyr::select(cowid, year) %>%
+  rename(cow_ccode=cowid)#Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later. 
+
 ```
 
 ##Cable Traffic
@@ -231,7 +239,7 @@ load("../data/tag_doc2.RData")
 
 #tag_doc2_country <-
 #  tag_doc2 %>%
-#  inner_join(countries2, by="tag_id") 
+#  inner_join(country_code_tag, by="tag_id") 
 #save(tag_doc2_country, file = "../data/tag_doc2_country.RData")
 load("../data/tag_doc2_country.RData")
 
@@ -245,19 +253,26 @@ load("../data/tag_doc2_country.RData")
 #  tally() 
 #save(cable_n_country_date, file = "../data/cable_n_country_date.RData")
 load("../data/cable_n_country_date.RData")
+
+#Yearly cable traffic by country-year
+cable_n_country_year<-
+  cable_n_country_date %>%
+  mutate(year=lubridate::year(date)) %>%
+  group_by(year, cow_ccode, country_name) %>%
+  summarise(y_n = sum(n)) 
+
 ```
 
 ###Examine cables tagged with certain countries as a test
 ```{r}
-
 #Check tag_id for certain countries
-countries2%>%filter(str_detect(country_name, 'China'))
-countries2%>%filter(str_detect(country_name, 'Korea'))
-countries2%>%filter(str_detect(country_name, 'Viet'))
-countries2%>%filter(str_detect(country_name, 'Afghan'))
-countries2%>%filter(str_detect(country_name, 'Iran'))
-countries2%>%filter(str_detect(country_name, 'Germany'))
-countries2%>%filter(str_detect(country_name, 'Egypt'))
+country_code_tag%>%filter(str_detect(country_name, 'China'))
+country_code_tag%>%filter(str_detect(country_name, 'Korea'))
+country_code_tag%>%filter(str_detect(country_name, 'Viet'))
+country_code_tag%>%filter(str_detect(country_name, 'Afghan'))
+country_code_tag%>%filter(str_detect(country_name, 'Iran'))
+country_code_tag%>%filter(str_detect(country_name, 'Germany'))
+country_code_tag%>%filter(str_detect(country_name, 'Egypt'))
 
 cable_china<-
   tag_doc2 %>%
@@ -303,43 +318,51 @@ cable_egypt<-
   tally() 
 ```
 
-#Yearly cable traffic
-```{r, results="hide"}
-cable_n_country_y<-
-  cable_n_country_date %>%
-  mutate(year=lubridate::year(date)) %>%
-  group_by(year, cow_ccode, country_name) %>%
-  summarise(y_n = sum(n)) 
-```
-
-#Descriptive statistics
+###Summary statistics of cable traffic by country
 ```{r, results="hide",message=FALSE}
-stargazer(as.data.frame(cable_n_country_y), 
+
+stargazer(as.data.frame(cable_n_country_date), 
           type = "html", 
-          title="Descriptive statistics of yearly cable traffic", 
+          title="Summary Statistics of Daily Cable Traffic", 
           digits=1, 
-          out="../data_analysis_output/desc_cable_n_country_y.html"#,
+          out="../data_analysis_output/desc_cable_n_country_day.html"#,
+          #covariate.labels=c("Miles/(US)gallon",)
+          )
+
+stargazer(as.data.frame(cable_n_country_year), 
+          type = "html", 
+          title="Summary Statistics of Yearly Cable Traffic", 
+          digits=1, 
+          out="../data_analysis_output/desc_cable_n_country_year.html"#,
           #covariate.labels=c("Miles/(US)gallon",)
           )
 ```
 
-#Import and load the COW data for U.S. diplomatic representation
+#U.S. diplomatic representation
+
+##Import and load the COW data for U.S. diplomatic representation
 ```{r results='hide', message=FALSE, warning=FALSE}
 us_dip_rep_cow<-
   read_csv("../external_data/cow_diplomatic_exchange_2006.1/Diplomatic_Exchange_2006v1.csv", locale = locale(encoding = "UTF-8")) 
 ```
 
-#Import and load Moyer et al's data for U.S. diplomatic representation
-```{r results='hide', message=FALSE, warning=FALSE}
+##Import and load Moyer et al's data for U.S. diplomatic representation
+```{r,results='hide', message=FALSE, warning=FALSE}
 us_dip_rep_moyer<-
-  read_csv("../external_data/moyeretal2016/Pardee Center Diplomatic Representation_COW 20190208.csv", locale = locale(encoding = "UTF-8")) %>% #COW-compatible version
+  read_csv("../external_data/moyeretal_2016/Pardee Center Diplomatic Representation_COW 20190208.csv", locale = locale(encoding = "UTF-8")) %>% #COW-compatible version
 #  read_excel("../external_data/moyeretal2016/Diplomatic_Exchange_V3.16.16.xlsx") %>% #Non-compatible, public version
   mutate(Year=as.numeric(Year)) %>%
   rename(year = Year) %>%
   filter(Country=="United States of America" & year>1969 & year<1981) %>%
 #  filter(Country=="United States of America") %>% 
-  mutate(date = ymd(paste0(year, "-", 06, "-", 01))) %>% #us_dip_rep[is.na(us_dip_rep$cow_ccode),] COW country code for East Germany is missing.
-  left_join(countries2, by=c("Destination"="cow_statename"))  
+  mutate(cow_ccode=countrycode(Destination, 'country.name', 'cown')) %>% #us_dip_rep[is.na(us_dip_rep$cow_ccode),] COW country code for German Federal Republic is wrong and should be 260, not 255.
+  mutate(cow_ccode= replace(cow_ccode, Destination=="German Federal Republic", 260)) %>%
+  right_join(country_univ_70s, by=c("year", "cow_ccode")) %>% #Note the missing values for Destination but not cow_ccode.
+  arrange(cow_ccode, year) %>%
+  mutate(date = ymd(paste0(year, "-", 06, "-", 01))) %>%
+  mutate(dip_rep=ifelse(is.na(country_ambassador),0, 1)) %>% #Created a variable for inferred US representation. Check this variable against the dataset by Moyer 2016. There may be a discrepancy due to bureaucratic delays and so on. For instance, there may be a diplomatic relationship but there is a delay in confirming him/her and the DCM serves as CM instead. 
+  mutate(ambassador=ifelse(position=="Ambassador Extraordinary and Plenipotentiary",1, 0))
+
 ```
 
 ##Examine cables tagged with certain countries as a test
@@ -430,13 +453,13 @@ us_dip_evt<-
   read_csv("../external_data/carter2018/AmericanDiplomacyDataset.csv") 
 
 #Check whether the country abbreviations are from COW or ISO-3166.
-all(us_dip_evt$source %in% countries2$cow_stateabb)
-all(us_dip_evt$target %in% countries2$cow_stateabb)
+all(us_dip_evt$source %in% country_code_tag$cow_stateabb)
+all(us_dip_evt$target %in% country_code_tag$cow_stateabb)
 all(us_dip_evt$source %in% iso_3166$Alpha_3)
 all(us_dip_evt$target %in% iso_3166$Alpha_3)
 
-setdiff(us_dip_evt$source, countries2$cow_stateabb)
-setdiff(us_dip_evt$target, countries2$cow_stateabb)
+setdiff(us_dip_evt$source, country_code_tag$cow_stateabb)
+setdiff(us_dip_evt$target, country_code_tag$cow_stateabb)
 setdiff(us_dip_evt$source, iso_3166$Alpha_3)
 setdiff(us_dip_evt$target, iso_3166$Alpha_3)
 
