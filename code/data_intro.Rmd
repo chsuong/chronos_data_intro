@@ -146,9 +146,15 @@ countries<-
 #Create a tibble dataframe of various country codes and cable tag ids
 #Note that this includes country codes and tag id for the US.
 
-cow<-
-  read_csv("./external_data/cow/COW country codes.csv") %>%
-  distinct()
+#Generate lists of all non-US (old and existing) countries. 
+states<-
+  read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/states2016.csv") %>%
+  dplyr::select("stateabb","ccode","statenme") %>%
+  filter(!ccode==2) %>% #Leave out the US
+  rename(cow_ccode=ccode,
+         cow_stateabb=stateabb, 
+         cow_statename=statenme) %>%   
+  distinct() 
 
 #Merge ISO_3166_1 and ISO_3166_3 (ISO country codes for withdrawn countries). Note that this list often omits retired codes. 
 iso_3166<-
@@ -183,39 +189,39 @@ country_code_tag<-
   country_code_tag[!is.na(country_code_tag$cow_ccode) & !is.na(country_code_tag$tag_id),] %>%
   mutate(cow_ccode= replace(cow_ccode, name=="Vietnam", 816)) %>% #Fix cow_ccode for Vietnam 
   mutate(cow_ccode= replace(cow_ccode, name=="West Germany", 260)) %>% #Fix cow_ccode for West Germany (German Federal Republic) 
-  left_join(cow, by=c("cow_ccode"="CCode")) %>% 
-  rename(country_name=name,
-         cow_stateabb=StateAbb, 
-         cow_statename=StateNme) %>%
+  left_join(states, by="cow_ccode") %>% 
+  rename(country_name=name) %>%
   dplyr::select(-iso3n) 
 #Germany and West Germany share their COW country codes.
 
 #Create a tibble dataframe of all countries that were potential diplomatic counterparts of the US in the 1970s.
 
-#Generate a list of existing country-year pairs for the 1970s (a universe of all possible diplomatic relations between US and other countries).
-states<-
+#Generate lists existing non-US country-year pairs for the 1970s (a universe of all possible diplomatic relations between US and other countries). Note that the dataframe below does NOT include the US but only all potential US countries who existed in the 1970s. For comparability with other datasets, we focus on the universe of potential diplomatic partners of the U.S., that is, countries that existed in the 1970s. Note that the universe of countries would differ by year!
+
+states_70s<-
   read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/states2016.csv") %>%
-  select(stateabb, ccode, statenme, styear, endyear) %>%
-  filter(!( endyear | ))
+  dplyr::select("ccode", "styear", "endyear") %>%
+  filter(!ccode==2) %>% #Leave out the US
+  rename(cow_ccode=ccode) %>% #,cow_stateabb=stateabb, cow_statename=statenme) 
+  rowwise() %>%
+  do(data.frame(cow_ccode = .$cow_ccode, year = seq(.$styear, .$endyear, by = 1))) %>%
+  filter(year>1972 & year<1980) %>%
+  left_join(states, by="cow_ccode")
 
-#Note that the dataframe below does NOT include the US but only all potential US countries who existed in the 1970s. It would have been better to generate a list of all possible country-year pairs for 1973-1979 since a cable written in the 1970s could discuss (and tagged with) a country that had existed before the 1970s. However, for comparability with other datasets, we focus on the universe of potential diplomatic partners of the U.S., that is, countries that existed in the 1970s.  
-
-country_univ_70s<-
-  read_csv("./external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
-  filter(year>1969 & year<1981) %>%
-  dplyr::select(cowid, year) %>%
-  rename(cow_ccode=cowid) %>%
-  left_join(cow, by=c("cow_ccode"="CCode")) %>%
-  rename(cow_stateabb=StateAbb, 
-         cow_statename=StateNme) %>%
-  filter(!cow_ccode==818)
+#  read_csv("./external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
+#  filter(year>1969 & year<1981) %>%
+#  dplyr::select(cowid, year) %>%
+#  rename(cow_ccode=cowid) %>%
+#  left_join(cow, by=c("cow_ccode"="CCode")) %>%
+#  rename(cow_stateabb=StateAbb, 
+#         cow_statename=StateNme) %>%
+#  filter(!cow_ccode==818)
 
 #The dataset by Lebovic and Saunders includes many errors:
 #it includes country code 818 but none of the COW country datasets include it. Drop the row with cow_ccode=818.
 #it also includes 0s for countries non-existent in the 1970s as a potential diplomatic partner (e.g. Croatia with country code 344 and Bosnia and Herzegovina with country code 346).
 
-#Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later. 
-  
+#Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later.  
 ```
 
 #Cable traffic by country
@@ -226,9 +232,9 @@ country_univ_70s<-
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 #Re-connect to the database
-driver = dbDriver("MySQL")
-connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
-mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
+#driver = dbDriver("MySQL")
+#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+#mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
 tags<-
   tbl(mydb, 'tags') %>% 
@@ -253,13 +259,13 @@ doc_date2<-
 #         ) %>%
 #  collect() 
 #save(tag_doc2, file = "../data/tag_doc2.RData")
-load("./data/tag_doc2.RData")
+#load("./data/tag_doc2.RData")
 
 #tag_doc2_country <-
 #  tag_doc2 %>%
 #  inner_join(country_code_tag, by="tag_id") 
 #save(tag_doc2_country, file = "../data/tag_doc2_country.RData")
-load("./data/tag_doc2_country.RData")
+#load("./data/tag_doc2_country.RData")
 
 #cable_n_country_date<-
 #  tag_doc2_country %>%
@@ -272,18 +278,31 @@ load("./data/tag_doc2_country.RData")
 #save(cable_n_country_date, file = "../data/cable_n_country_date.RData")
 load("./data/cable_n_country_date.RData") #Note that this does neither all dates nor all countries on the COW list.
 
-#Yearly cable traffic by country-year, including 0 cables by some countries on the COW list. Note that this does NOT include the cables tagged with US, due to the dataframe country_univ_70s. 
-cable_n_country_year<-
+#Yearly cable traffic by country-year, including 0 cables by some countries that existed in the 1970s. Note that this does NOT include the cables tagged with US, due to the dataframe states_70s. 
+cable_n_70s_country_year<-
   cable_n_country_date %>%
   mutate(year=lubridate::year(date)) %>%
   group_by(year, cow_ccode, country_name) %>%
   summarise(n_c_y = sum(n)) %>%
-  right_join(country_univ_70s, by=c("year", "cow_ccode"))%>%
-  filter(1972<year & year<1980) %>%
+  right_join(states_70s, by=c("year", "cow_ccode"))%>%
   select(-country_name) %>%
   mutate(n_c_y= replace(n_c_y, is.na(n_c_y), 0)) %>%
   ungroup %>%
-  mutate(total_n = sum(n_c_y))
+  mutate(total_n = sum(n_c_y)) %>%
+  arrange(year, cow_ccode)
+
+#Yearly cable traffic by country-year, including 0 cables by some countries that existed anytime before 2016. Note that this does NOT include the cables tagged with US. 
+#cable_n_country_year<-
+#  cable_n_country_date %>%
+#  mutate(year=lubridate::year(date)) %>%
+#  group_by(year, cow_ccode, country_name) %>%
+#  summarise(n_c_y = sum(n)) %>%
+#  full_join(states, by="cow_ccode")%>%
+#  select(-country_name) %>%
+#  mutate(n_c_y= replace(n_c_y, is.na(n_c_y), 0)) %>%
+#  ungroup %>%
+#  mutate(total_n = sum(n_c_y)) %>%
+#  arrange(year, cow_ccode)
 ```
 
 ##Examine cables tagged with certain countries as a test
@@ -345,7 +364,7 @@ cable_egypt<-
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-stargazer(as.data.frame(cable_n_country_year)[c("year", "cow_ccode", "n_c_y")], 
+stargazer(as.data.frame(cable_n_70s_country_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "html", 
           title="Summary Statistics of Cable Traffic by Country-Year", 
           digits=1, 
@@ -358,10 +377,10 @@ stargazer(as.data.frame(cable_n_country_year)[c("year", "cow_ccode", "n_c_y")],
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 table_country_year_top10<- 
-  cable_n_country_year %>%
+  cable_n_70s_country_year %>%
   mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 0), "%")) %>%
   arrange(desc(n_c_y)) %>%
-  top_n(10) 
+  top_n(n = 10, wt = n_c_y) 
 
 stargazer(table_country_year_top10[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
@@ -377,10 +396,11 @@ stargazer(table_country_year_top10[c("year", "cow_statename", "n_c_y","rel.freq"
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 table_country_year_bottom10<- 
-  cable_n_country_year %>%
+  cable_n_70s_country_year %>%
   mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 0), "%")) %>%
   arrange(n_c_y) %>%
-  filter(n_c_y==0) 
+  #filter(n_c_y<10) 
+  top_n(n = -10, wt = n_c_y) 
 
 stargazer(table_country_year_bottom10[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
@@ -397,14 +417,14 @@ stargazer(table_country_year_bottom10[c("year", "cow_statename", "n_c_y","rel.fr
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 table_country_top10<- 
-  cable_n_country_year %>%
+  cable_n_70s_country_year %>%
   group_by(cow_ccode, cow_stateabb, cow_statename) %>% 
   summarise(n_c = sum(n_c_y)) %>%
   ungroup %>%
   mutate(total_n_c= sum(n_c), 
          rel.freq = paste0(round(100 * n_c/total_n_c, 0), "%")) %>%
   arrange(desc(n_c)) %>%
-  top_n(10) 
+  top_n(n = 10, wt = n_c) 
 
 stargazer(table_country_top10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
@@ -422,14 +442,14 @@ stargazer(table_country_top10[c("cow_statename", "n_c","rel.freq")],
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 table_country_bottom10<- 
-  cable_n_country_year %>%
+  cable_n_70s_country_year %>%
   group_by(cow_ccode, cow_stateabb, cow_statename) %>% 
   summarise(n_c = sum(n_c_y)) %>%
   ungroup %>%
   mutate(total_n_c= sum(n_c), 
          rel.freq = paste0(round(100 * n_c/total_n_c, 0), "%")) %>%
   arrange(desc(n_c)) %>%
-  top_n(-10) 
+  top_n(n = -10, wt = n_c) 
 
 stargazer(table_country_bottom10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
@@ -459,11 +479,11 @@ us_dip_rep_moyer<-
 #  read_excel("../external_data/moyeretal2016/Diplomatic_Exchange_V3.16.16.xlsx") %>% #Non-compatible, public version
   mutate(Year=as.numeric(Year)) %>%
   rename(year = Year) %>%
-  filter(Country=="United States of America" & year>1969 & year<1981) %>%
+  filter(Country=="United States of America") %>%
 #  filter(Country=="United States of America") %>% 
   mutate(cow_ccode=countrycode(Destination, 'country.name', 'cown')) %>% #us_dip_rep[is.na(us_dip_rep$cow_ccode),] COW country code for German Federal Republic is wrong and should be 260, not 255.
   mutate(cow_ccode= replace(cow_ccode, Destination=="German Federal Republic", 260)) %>%
-  right_join(country_univ_70s, by=c("year", "cow_ccode")) %>% #Note the missing values for Destination but not cow_ccode.
+  right_join(states_70s, by=c("year", "cow_ccode")) %>% #Note the missing values for Destination but not cow_ccode.
   arrange(cow_ccode, year) %>%
   #mutate(date = ymd(paste0(year, "-", 06, "-", 01))) %>%
   mutate(dip_rep_m=ifelse(is.na(`Embassy Old`),0, 1)) %>% #Created a variable for US representation. The dataset by Arias and Smith 2018 seems more accurate. This dataset misses the case of U.S. embassy in the Bahamas in 1973-75 wherease the latter includes it.
@@ -507,10 +527,9 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 
 us_dip_rep_app <-  
   read_csv("./external_data/arias_smith_2018/ambassadors.csv", guess_max = 100000, locale = locale(encoding = "UTF-8")) %>%
-  filter(year>1969 & year<1981) %>%
   dplyr::select(year, ccode, country_ambassador, ambassador, position, politicalappointee,performanceMU,good, bad) %>%
   rename(cow_ccode=ccode, ambassador_name=ambassador) %>%
-  right_join(country_univ_70s, by=c("cow_ccode", "year")) %>% #Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later.  
+  right_join(states_70s, by=c("cow_ccode", "year")) %>%  
   arrange(cow_ccode, year) %>%
   mutate(dip_rep_a=ifelse(is.na(country_ambassador),0, 1)) %>% #Created a variable for inferred US representation. Check this variable against the dataset by Moyer 2016. There may be a discrepancy due to bureaucratic delays and so on. For instance, there may be a diplomatic relationship but there is a delay in confirming him/her and the DCM serves as CM instead. 
   mutate(ambassador=ifelse(position=="Ambassador Extraordinary and Plenipotentiary",1, 0))
@@ -527,9 +546,9 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 #Note that the paper (LEBOVIC AND SAUNDERS 2016) mentions the variable for crisis (Crisis Shocks from the International Crisis Behavior Project) but the dataset actually does not include it. The paper notes that "regularized patterns [of U.S. diplomatic visits] that we discern are not products of crisis diplomacy and that crises do not strongly affect the results" (p.119).
 us_dip_vis<-
   read_csv("./external_data/lebovic_saunders_2016/diplomatic_core.replication.csv", locale = locale(encoding = "UTF-8")) %>%
-  filter(year>1969 & year<1981) %>%
   dplyr::select(cowid, year, bi_PRE, bi_SOS) %>%#, mil_ratio, USmilaid, allies, USdefense, USdefense_EUR, UStrade, energypc, USalign, UNpart, mpower, term2, NIX, FOR, CAR, demo, bi_L1_PRE, EUR, AFR, MEA, SCA, EAP, bi_L14_SOS, bi_L14_PRE, bi_L58_SOS, bi_L58_PRE) %>%
-  rename(cow_ccode=cowid)  
+  rename(cow_ccode=cowid) %>%
+  right_join(states_70s, by=c("cow_ccode", "year"))  
   #mutate(un_member= ifelse(!is.na(UNpart),1, NA)) #Check whether newly admitted states participate in UN voting only the year after
 
 #a<-us_dip_vis[us_dip_vis$UNpart==0,]
@@ -590,20 +609,9 @@ us_dip_evt[us_dip_evt$source %in% setdiff(us_dip_evt$source, iso_3166$Alpha_3),]
 
 #It looks like the variables "target" and "source" in the dataset are "the 2-character FIPS10-4 country code for the location" (http://data.gdeltproject.org/documentation/ISA.2013.GDELT.pdf). But these seem to overlap a lot with iso3c
 
-us_dip_evt2<-
-  read_csv("./external_data/carter_2018/AmericanDiplomacyDataset.csv") %>%
-  filter(1969<year & year<1981) %>%
-  mutate(ym=as.yearmon(date, "%Y %m"), 
-       cow_ccode_source=countrycode(source, 'iso3c','cown'),
-       cow_ccode_target=countrycode(target, 'iso3c','cown')) #%>%
-#  mutate(cow_ccode_source= replace(cow_ccode_source, source=="YUG", 345), #The function countrycode did not identify "YUG" as Yugoslavia.
-#         cow_ccode_target = replace(cow_ccode_target, target=="YUG", 345), #The function countrycode did not identify "YUG" as Serbia, then part of Yugoslavia.
-#         cow_ccode_source= replace(cow_ccode_source, source=="SER", 345), #The function countrycode did not identify "SER" as Serbia, then part of Yugoslavia.
-#         cow_ccode_target = replace(cow_ccode_target, target=="SER", 345)) #The function countrycode did not identify "SER" as Serbia, then part of Yugoslavia.
-  
 #Entities with missing COW country codes are non-state. Let's drop or fix them.
-table(us_dip_evt[is.na(us_dip_evt$cow_ccode_source),]$source)
-table(us_dip_evt[is.na(us_dip_evt$cow_ccode_target),]$target)
+#table(us_dip_evt[is.na(us_dip_evt$cow_ccode_source),]$source)
+#table(us_dip_evt[is.na(us_dip_evt$cow_ccode_target),]$target)
 #AUH: Abu Dhabi before it became part of UAE in December 1971. 
 #BMU: Bermuda
 #CYM: Cayman Islands 
@@ -614,6 +622,27 @@ table(us_dip_evt[is.na(us_dip_evt$cow_ccode_target),]$target)
 #TMP: East Timor (https://wits.worldbank.org/wits/wits/witshelp/content/codes/country_codes.htm)
 #VMN: a typo for VNM (Vietnam)? 
 #YUG: Transitional reservations for former Yugoslavia/Serbia and Montenegro (https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3 https://wits.worldbank.org/wits/wits/witshelp/content/codes/country_codes.htm)
+
+us_dip_evt_country_year<-
+  read_csv("./external_data/carter_2018/AmericanDiplomacyDataset.csv", locale = locale(encoding = "UTF-8")) %>%
+  #filter(1969<year & year<1981) %>%
+  mutate(cow_ccode_source=countrycode(source, 'iso3c','cown'),
+       cow_ccode_target=countrycode(target, 'iso3c','cown')) %>%
+#  mutate(cow_ccode_source= replace(cow_ccode_source, source=="YUG", 345), #The function countrycode did not identify "YUG" as Yugoslavia.
+#         cow_ccode_target = replace(cow_ccode_target, target=="YUG", 345), #The function countrycode did not identify "YUG" as Serbia, then part of Yugoslavia.
+#         cow_ccode_source= replace(cow_ccode_source, source=="SER", 345), #The function countrycode did not identify "SER" as Serbia, then part of Yugoslavia.
+#         cow_ccode_target = replace(cow_ccode_target, target=="SER", 345)) #The function countrycode did not identify "SER" as Serbia, then part of Yugoslavia.
+  mutate(cow_ccode=ifelse(cow_ccode_source==2,cow_ccode_target, cow_ccode_source),
+         ccode_type=ifelse(cow_ccode_source==2,"target", "source")
+         ) %>%
+  select(year, cow_ccode, ccode_type, vcoop, mcoop, vcon, mcon) %>%
+  filter(!is.na(cow_ccode))  %>%
+  group_by(.dots=c("year","cow_ccode")) %>%
+  tally() %>%
+  right_join(states_70s, by=c("cow_ccode", "year")) %>%
+  rename(evt_n_country_year=n) %>%
+  mutate(evt_n_country_year= replace(evt_n_country_year, is.na(evt_n_country_year), 0)) 
+
 ```
 
 #Import and load the data on international crises
@@ -629,12 +658,6 @@ icb<-
 #Note that the longest duration of a crisis (from a trigger event to its termination) is 3 years.
 #max(icb$yrterm-icb$systrgyr, na.rm=TRUE)
 ```
-
-#Compare the monthly cable traffic with the data on international crises
-```{r}
-
-```
-
 
 ##Compare the ambassador-country-year datasets
 ```{r}
