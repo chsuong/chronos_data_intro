@@ -27,8 +27,6 @@ library(tidyverse)
 library(tidyquant) # Loads tidyverse, tidquant, financial pkgs, xts/zoo
 library(xts) #Time series
 library(RMySQL) #For connecting to the databse
-#library(sjPlot) #For creating Word-compatible tables
-#library(labelled)
 library(htmlTable) #For creating Word-compatible tables
 library(Hmisc)
 library(expss) #For creating Word-compatible tables
@@ -39,7 +37,6 @@ library(ggplot2)
 library(reshape2)
 library(readxl)
 library(countrycode) #For reconciling different country codes across dataset
-#library(fuzzyjoin) #For reconciling different country codes across dataset
 library(ISOcodes) #A package for ISO country codes
 #library(MASS) #Negative binomial models
 library(stargazer)
@@ -195,32 +192,37 @@ country_code_tag<-
 
 #Create a tibble dataframe of all countries that were potential diplomatic counterparts of the US in the 1970s
 
-#Generate a list of existing country-year pairs for the 1970s (a universe of all possbiel diplomatic relations).
+#Generate a list of existing country-year pairs for the 1970s (a universe of all possible diplomatic relations between US and other countries).
 #states_y<-
 #  read_csv("../external_data/cow/states2016.csv") %>%
 #  select(stateabb, ccode, statenme, styear, endyear) %>%
 #  mutate
 
-#Note that this does NOT for the US.
+#Note that the dataframe below does NOT include the US but only all potential US countries who existed in the 1970s. It would have been better to generate a list of all possible country-year pairs for 1973-1979 since a cable written in the 1970s could discuss (and tagged with) a country that had existed before the 1970s. However, for comparability with other datasets, we focus on the universe of potential diplomatic partners of the U.S., that is, countries that existed in the 1970s.  
+
 country_univ_70s<-
   read_csv("./external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
   filter(year>1969 & year<1981) %>%
   dplyr::select(cowid, year) %>%
-  rename(cow_ccode=cowid)#Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later. 
+  rename(cow_ccode=cowid) %>%
+  left_join(cow, by=c("cow_ccode"="CCode")) %>%
+  rename(cow_stateabb=StateAbb, 
+         cow_statename=StateNme) 
 
+#Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later. 
 ```
 
-##Cable Traffic
+#Cable traffic by country
 
-###Download, save, or load the tables for tags and docs (doc_id and date) in the working directory and count the number of cables tagged for each country
+##Download, save, or load the tables for tags and docs (doc_id and date) in the working directory and count the number of cables tagged for each country
 ```{r results='hide', message=FALSE, warning=FALSE}
 
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 #Re-connect to the database
-#driver = dbDriver("MySQL")
-#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
-#mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
+driver = dbDriver("MySQL")
+connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
 tags<-
   tbl(mydb, 'tags') %>% 
@@ -264,19 +266,21 @@ load("./data/tag_doc2_country.RData")
 #save(cable_n_country_date, file = "../data/cable_n_country_date.RData")
 load("./data/cable_n_country_date.RData") #Note that this does neither all dates nor all countries on the COW list.
 
-#Yearly cable traffic by country-year, including 0 cables by some countries on the COW list
+#Yearly cable traffic by country-year, including 0 cables by some countries on the COW list. Note that this does NOT include the cables tagged with US, due to the dataframe country_univ_70s. 
 cable_n_country_year<-
   cable_n_country_date %>%
   mutate(year=lubridate::year(date)) %>%
   group_by(year, cow_ccode, country_name) %>%
-  summarise(y_n = sum(n)) %>%
+  summarise(n_y = sum(n)) %>%
   right_join(country_univ_70s, by=c("year", "cow_ccode"))%>%
   filter(1972<year & year<1980) %>%
   select(-country_name) %>%
-  mutate(y_n= replace(y_n, is.na(y_n), 0)) 
+  mutate(n_y= replace(n_y, is.na(n_y), 0)) %>%
+  ungroup %>%
+  mutate(total_n_y = sum(n_y))
 ```
 
-###Examine cables tagged with certain countries as a test
+##Examine cables tagged with certain countries as a test
 ```{r}
 #Check tag_id for certain countries
 country_code_tag%>%filter(str_detect(country_name, 'China'))
@@ -331,16 +335,95 @@ cable_egypt<-
   tally() 
 ```
 
-###Summary statistics of cable traffic by country
+##Summary statistics of cable traffic by country
 ```{r, results="hide",message=FALSE}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-stargazer(as.data.frame(cable_n_country_year), 
+stargazer(as.data.frame(cable_n_country_year)[c("year", "cow_ccode", "n_y")], 
           type = "html", 
-          title="Summary Statistics of Yearly Cable Traffic", 
+          title="Summary Statistics of Cable Traffic by Country-Year", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_country_year.html",
-          covariate.labels=c("Year", "COW Codes of the Country Tagged by Cables", "Cable Traffic for Each Country-Year")
+          covariate.labels=c("Year", "COW Codes of Countries Tagged by Cables", "Cable Traffic for Each Country-Year")
+          )
+```
+##Country-years tagged with most cables
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+table_country_year_top10<- 
+  cable_n_country_year %>%
+#  ungroup %>% 
+  mutate(#total_n_y = sum(n_y),
+         rel.freq = paste0(round(100 * n_y/total_n_y, 0), "%")) %>%
+  arrange(desc(n_y)) %>%
+  top_n(10) #%>%
+#  select(c(year, cow_statename, n_y, rel.freq)) #%>%
+#  as_label(var.label=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))%>%
+#  set_caption("Table: Country-Years with Most Cables") %>%
+#  htmlTable(rnames = FALSE)
+#table_country_year_top10  
+
+stargazer(table_country_year_top10[c("year", "cow_statename", "n_y","rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "html", 
+          title="Country-Years with Most Cables", 
+          digits=1, 
+          out="./data_analysis_output/top10_cable_n_country_year.html",
+          covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
+```
+
+##Countries tagged with most cables
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+table_country_top10<- 
+  cable_n_country_year %>%
+  #ungroup %>%
+  #mutate(total_n_y = sum(n_y)) 
+  group_by(cow_ccode, cow_stateabb, cow_statename) %>% 
+  summarise(n_c = sum(n_y)) %>%
+  ungroup %>%
+  mutate(total_n_c= sum(n_c), 
+         rel.freq = paste0(round(100 * n_c/total_n_c, 0), "%")) %>%
+  arrange(desc(n_c)) %>%
+  top_n(10) 
+
+stargazer(table_country_top10[c("cow_statename", "n_c","rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "html", 
+          title="Countries Tagged in Most Cables", 
+          digits=1, 
+          out="./data_analysis_output/top10_cable_n_country.html",
+          covariate.labels=c("Tagged Country", "Number of Cables", "Relative Frequency")
+          )
+```
+##Countries tagged with least cables
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+table_country_bottom10<- 
+  cable_n_country_year %>%
+  #ungroup %>%
+  #mutate(total_n_y = sum(n_y)) 
+  group_by(cow_ccode, cow_stateabb, cow_statename) %>% 
+  summarise(n_c = sum(n_y)) %>%
+  ungroup %>%
+  mutate(total_n_c= sum(n_c), 
+         rel.freq = paste0(round(100 * n_c/total_n_c, 0), "%")) %>%
+  arrange(desc(n_c)) %>%
+  top_n(-10) 
+
+stargazer(table_country_bottom10[c("cow_statename", "n_c","rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "html", 
+          title="Countries Tagged in Least Cables", 
+          digits=1, 
+          out="./data_analysis_output/bottom10_cable_n_country.html",
+          covariate.labels=c("Tagged Country", "Number of Cables", "Relative Frequency")
           )
 ```
 
@@ -607,31 +690,31 @@ corrplot(M, p.mat = res1$p, sig.level = .05)
 
 # "pooling"
 
-pooling1 <- pglm(y_n ~ dip_rep_m
+pooling1 <- pglm(n_y ~ dip_rep_m
               #+dip_focus
               +bi_PRE+bi_SOS, data=us_dip_rep_m_cable_n_vis, index=c("cow_ccode", "year"), family = negbin, model="pooling"#, method = "nr"
               )
 summary(pooling1)
 
-pooling2 <- pglm(y_n ~ #dip_rep_m+
+pooling2 <- pglm(n_y ~ #dip_rep_m+
               dip_focus
               +bi_PRE+bi_SOS, data=us_dip_rep_m_cable_n_vis, index=c("cow_ccode", "year"), family = negbin, model="pooling"#, method = "nr"
               )
 summary(pooling2)
 
-fixed1 <- pglm(y_n ~ dip_rep_m
+fixed1 <- pglm(n_y ~ dip_rep_m
               #+dip_focus
               +bi_PRE+bi_SOS, data=us_dip_rep_m_cable_n_vis, index=c("cow_ccode", "year"), family = negbin, model="within", method = "nr"
               )
 summary(fixed1)
 
-fixed2 <- pglm(y_n ~ #dip_rep_m+
+fixed2 <- pglm(n_y ~ #dip_rep_m+
                 dip_focus
               +bi_PRE+bi_SOS, data=us_dip_rep_m_cable_n_vis, index=c("cow_ccode", "year"), family = negbin, model="within", method = "nr"
               )
 summary(fixed2)
 
-#random <- pglm(y_n ~ dip_rep_m+dip_focus+bi_PRE+bi_SOS, data=us_dip_rep_m_cable_n_vis, index=c("cow_ccode", "year"), family = negbin, model="random"#, method = "nr"
+#random <- pglm(n_y ~ dip_rep_m+dip_focus+bi_PRE+bi_SOS, data=us_dip_rep_m_cable_n_vis, index=c("cow_ccode", "year"), family = negbin, model="random"#, method = "nr"
 #               )
 ```
 
@@ -639,15 +722,15 @@ cable_n_irep_app<-
   cable_n_country_y %>%
   inner_join(us_dip_irep_app, by=c("year", "cow_ccode")) 
 
-glm.nb_irep1 <- glm.nb(y_n~dip_irep, data = cable_n_irep_app)
+glm.nb_irep1 <- glm.nb(n_y~dip_irep, data = cable_n_irep_app)
 
-glm.nb_amb <- glm.nb(y_n~ambassador, data = cable_n_irep_app)
+glm.nb_amb <- glm.nb(n_y~ambassador, data = cable_n_irep_app)
 
-glm.nb_politicalappointee <- glm.nb(y_n~politicalappointee, data = cable_n_irep_app)
+glm.nb_politicalappointee <- glm.nb(n_y~politicalappointee, data = cable_n_irep_app)
 
-glm.nb_good <- glm.nb(y_n~good, data = cable_n_irep_app)
+glm.nb_good <- glm.nb(n_y~good, data = cable_n_irep_app)
 
-glm.nb_bad <- glm.nb(y_n~bad, data = cable_n_irep_app)
+glm.nb_bad <- glm.nb(n_y~bad, data = cable_n_irep_app)
 
 stargazer(glm.nb_irep1,
           glm.nb_amb,
@@ -673,16 +756,16 @@ stargazer(glm.nb_irep1,
 ```
 
 #Slightly modified from the analysis in Lebovic and Saunders (2016)' Tables 3 and 4
-glm.nb_pre2 <- glm.nb(y_n~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+glm.nb_pre2 <- glm.nb(n_y~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
-glm.nb_sos2 <- glm.nb(y_n~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+glm.nb_sos2 <- glm.nb(n_y~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
-glm.nb_pre3 <- glm.nb(y_n~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+glm.nb_pre3 <- glm.nb(n_y~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
-glm.nb_sos3 <- glm.nb(y_n~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+glm.nb_sos3 <- glm.nb(n_y~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
 #Check model assumptions and robustness (https://stats.idre.ucla.edu/r/dae/negative-binomial-regression/)
@@ -724,22 +807,22 @@ cable_n_vis_country_y<-
   rename(cowid=cow_ccode) %>%
   inner_join(us_dip_vis, by=c("year", "cowid")) 
 
-glm.nb_pre1 <- glm.nb(y_n~bi_PRE, data = cable_n_vis_country_y)
+glm.nb_pre1 <- glm.nb(n_y~bi_PRE, data = cable_n_vis_country_y)
 
-glm.nb_pre1 <- glm.nb(y_n~bi_PRE, data = cable_n_vis_country_y)
-glm.nb_sos1 <- glm.nb(y_n~bi_SOS, data = cable_n_vis_country_y)
+glm.nb_pre1 <- glm.nb(n_y~bi_PRE, data = cable_n_vis_country_y)
+glm.nb_sos1 <- glm.nb(n_y~bi_SOS, data = cable_n_vis_country_y)
 
 #Slightly modified from the analysis in Lebovic and Saunders (2016)' Tables 3 and 4
-glm.nb_pre2 <- glm.nb(y_n~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+glm.nb_pre2 <- glm.nb(n_y~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
-glm.nb_sos2 <- glm.nb(y_n~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+glm.nb_sos2 <- glm.nb(n_y~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
-glm.nb_pre3 <- glm.nb(y_n~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+glm.nb_pre3 <- glm.nb(n_y~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
-glm.nb_sos3 <- glm.nb(y_n~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
+glm.nb_sos3 <- glm.nb(n_y~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
 #Cluster by cowid
 
 #Check model assumptions and robustness (https://stats.idre.ucla.edu/r/dae/negative-binomial-regression/)
