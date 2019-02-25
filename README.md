@@ -15,7 +15,7 @@ I created a html/rmarkdown file to explore the databases and to make Word-compat
 * COW country codes (cow): http://www.correlatesofwar.org/data-sets/cow-country-codes/cow-country-codes/at_download/file
 * COW diplomatic representation (us_dip_rep_cow): http://www.correlatesofwar.org/data-sets/diplomatic-exchange
 * U.S. diplomatic representation (us_dip_rep_moyer; COW-compatible version): https://www.dropbox.com/sh/2wnklx04vblnmi1/AABmMxbxvja_JVStsxKD4F2Qa?dl=0
-** Errors:
+** Errors: The dataset by Arias and Smith 2018 seems more accurate about US diplomatic representation. This dataset misses the case of U.S. embassy in the Bahamas in 1973-75 wherease the latter includes it. The codebook is outdated and omits important information. It seems like the value 0 for the variable "Focus New" represents unreciprocated cases. 
 
 * U.S. diplomatic visits (us_dip_vis): https://academic.oup.com/isq/article/60/1/107/2358022#supplementary-data
 ** Errors: the variables for visits bi_SOS and bi_PRE (and the dataset as a whole) include countries that never existed during the period, hence should not appear in the dataset. The variables have the value of 0 for Croatia, Macedonia (cowid 343), Bosnia and Herzegovina (cowid 346), Kosovo (cowid 347) for the 1970s. However, the countries did not exist in the 1970s. Even when they are dropped in analyses using control variables with missing values, they should not be coded as 0.   

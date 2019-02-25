@@ -212,7 +212,7 @@ country_univ_70s<-
 
 #The dataset by Lebovic and Saunders includes many errors:
 #it includes country code 818 but none of the COW country datasets include it. Drop the row with cow_ccode=818.
-#it also includes countries non-existent in the 1970s as a potential diplomatic partner (e.g. Croatia with country code 344 and Bosnia and Herzegovina with country code 346).
+#it also includes 0s for countries non-existent in the 1970s as a potential diplomatic partner (e.g. Croatia with country code 344 and Bosnia and Herzegovina with country code 346).
 
 #Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later. 
   
