@@ -1,0 +1,16 @@
+
+Countries Least Tagged in Cables
+==================================================================
+Country                        Number of Cables Relative Frequency
+------------------------------------------------------------------
+Mongolia                             553                0%        
+Comoros                              525                0%        
+Samoa                                506                0%        
+Sao Tome and Principe                502                0%        
+Dominica                             431                0%        
+Solomon Islands                      321                0%        
+Bhutan                               277                0%        
+St. Lucia                            209                0%        
+St. Vincent and the Grenadines       139                0%        
+Republic of Vietnam                   0                 0%        
+------------------------------------------------------------------

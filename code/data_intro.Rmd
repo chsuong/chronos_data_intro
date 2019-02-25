@@ -365,6 +365,14 @@ cable_egypt<-
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 stargazer(as.data.frame(cable_n_70s_country_year)[c("year", "cow_ccode", "n_c_y")], 
+          type = "text", 
+          title="Summary Statistics of Cable Traffic by Country-Year", 
+          digits=1, 
+          out="./data_analysis_output/desc_cable_n_country_year.txt",
+          covariate.labels=c("Year", "COW Codes of Countries Tagged by Cables", "Cable Traffic for Each Country-Year")
+          )
+
+stargazer(as.data.frame(cable_n_70s_country_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "html", 
           title="Summary Statistics of Cable Traffic by Country-Year", 
           digits=1, 
@@ -385,6 +393,15 @@ table_country_year_top10<-
 stargazer(table_country_year_top10[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
+          type = "text", 
+          title="Country-Years with Most Cables", 
+          digits=1, 
+          out="./data_analysis_output/top10_cable_n_country_year.txt",
+          covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
+
+stargazer(table_country_year_top10[c("year", "cow_statename", "n_c_y","rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
           type = "html", 
           title="Country-Years with Most Cables", 
           digits=1, 
@@ -401,6 +418,15 @@ table_country_year_bottom10<-
   arrange(n_c_y) %>%
   #filter(n_c_y<10) 
   top_n(n = -10, wt = n_c_y) 
+
+stargazer(table_country_year_bottom10[c("year", "cow_statename", "n_c_y","rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "text", 
+          title="Country-Years with Least Cables", 
+          digits=1, 
+          out="./data_analysis_output/bottom10_cable_n_country_year.txt",
+          covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 
 stargazer(table_country_year_bottom10[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
@@ -429,6 +455,16 @@ table_country_top10<-
 stargazer(table_country_top10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
+          type = "text", 
+          title="Countries Most Tagged in Cables", 
+          digits=1, 
+          out="./data_analysis_output/top10_cable_n_country.txt",
+          covariate.labels=c("Country", "Number of Cables", "Relative Frequency")
+          )
+
+stargazer(table_country_top10[c("cow_statename", "n_c","rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
           type = "html", 
           title="Countries Most Tagged in Cables", 
           digits=1, 
@@ -450,6 +486,16 @@ table_country_bottom10<-
          rel.freq = paste0(round(100 * n_c/total_n_c, 0), "%")) %>%
   arrange(desc(n_c)) %>%
   top_n(n = -10, wt = n_c) 
+
+stargazer(table_country_bottom10[c("cow_statename", "n_c","rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "text", 
+          title="Countries Least Tagged in Cables", 
+          digits=1, 
+          out="./data_analysis_output/bottom10_cable_n_country.txt",
+          covariate.labels=c("Country", "Number of Cables", "Relative Frequency")
+          )
 
 stargazer(table_country_bottom10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
@@ -480,7 +526,6 @@ us_dip_rep_moyer<-
   mutate(Year=as.numeric(Year)) %>%
   rename(year = Year) %>%
   filter(Country=="United States of America") %>%
-#  filter(Country=="United States of America") %>% 
   mutate(cow_ccode=countrycode(Destination, 'country.name', 'cown')) %>% #us_dip_rep[is.na(us_dip_rep$cow_ccode),] COW country code for German Federal Republic is wrong and should be 260, not 255.
   mutate(cow_ccode= replace(cow_ccode, Destination=="German Federal Republic", 260)) %>%
   right_join(states_70s, by=c("year", "cow_ccode")) %>% #Note the missing values for Destination but not cow_ccode.

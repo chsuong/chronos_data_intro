@@ -1,0 +1,16 @@
+
+Country-Years with Most Cables
+=======================================================
+Year Tagged Country Number of Cables Relative Frequency
+-------------------------------------------------------
+1976     Russia          24856               1%        
+1975     Russia          23404               1%        
+1978     Russia          22244               1%        
+1979     Russia          21978               1%        
+1977     Russia          21836               1%        
+1974     Russia          20876               1%        
+1979      Iran           14433               1%        
+1977 United Kingdom      14145               1%        
+1979     Israel          13974               1%        
+1978     Israel          13918               1%        
+-------------------------------------------------------
