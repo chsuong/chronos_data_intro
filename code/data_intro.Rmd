@@ -44,6 +44,9 @@ library(corrplot)
 library(pglm)
 #library(xtable)
 library(gtools)
+library(lmtest)
+library(sandwich)
+library(plm)
 
 #setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #If necessary, set as the working directory a location where you can save large data files with file size over 100 mb (github limitation).
 #Create a folder named "external_data" in the working directory
@@ -384,28 +387,28 @@ stargazer(as.data.frame(cable_n_70s_country_year)[c("year", "cow_ccode", "n_c_y"
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-table_country_year_top10<- 
+table_country_year_top30<- 
   cable_n_70s_country_year %>%
   mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 0), "%")) %>%
   arrange(desc(n_c_y)) %>%
-  top_n(n = 10, wt = n_c_y) 
+  top_n(n = 30, wt = n_c_y) 
 
-stargazer(table_country_year_top10[c("year", "cow_statename", "n_c_y","rel.freq")],
+stargazer(table_country_year_top30[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
           title="Country-Years with Most Cables", 
           digits=1, 
-          out="./data_analysis_output/top10_cable_n_country_year.txt",
+          out="./data_analysis_output/top30_cable_n_country_year.txt",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 
-stargazer(table_country_year_top10[c("year", "cow_statename", "n_c_y","rel.freq")],
+stargazer(table_country_year_top30[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
           title="Country-Years with Most Cables", 
           digits=1, 
-          out="./data_analysis_output/top10_cable_n_country_year.html",
+          out="./data_analysis_output/top30_cable_n_country_year.html",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 ```
 
@@ -443,7 +446,7 @@ stargazer(table_country_year_bottom10[c("year", "cow_statename", "n_c_y","rel.fr
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-table_country_top10<- 
+table_country_top30<- 
   cable_n_70s_country_year %>%
   group_by(cow_ccode, cow_stateabb, cow_statename) %>% 
   summarise(n_c = sum(n_c_y)) %>%
@@ -451,24 +454,24 @@ table_country_top10<-
   mutate(total_n_c= sum(n_c), 
          rel.freq = paste0(round(100 * n_c/total_n_c, 0), "%")) %>%
   arrange(desc(n_c)) %>%
-  top_n(n = 10, wt = n_c) 
+  top_n(n = 30, wt = n_c) 
 
-stargazer(table_country_top10[c("cow_statename", "n_c","rel.freq")],
+stargazer(table_country_top30[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
           title="Countries Most Frequently Tagged in Cables", 
           digits=1, 
-          out="./data_analysis_output/top10_cable_n_country.txt",
+          out="./data_analysis_output/top30_cable_n_country.txt",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 
-stargazer(table_country_top10[c("cow_statename", "n_c","rel.freq")],
+stargazer(table_country_top30[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
           title="Countries Most Frequently Tagged in Cables", 
           digits=1, 
-          out="./data_analysis_output/top10_cable_n_country.html",
+          out="./data_analysis_output/top30_cable_n_country.html",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 ```
 
@@ -571,11 +574,17 @@ us_dip_rep_app <-
   read_csv("./external_data/arias_smith_2018/ambassadors.csv", guess_max = 100000, locale = locale(encoding = "UTF-8")) %>%
   dplyr::select(year, ccode, country_ambassador, ambassador, position, politicalappointee,performanceMU,good, bad) %>%
   rename(cow_ccode=ccode, ambassador_name=ambassador) %>%
-  right_join(states_70s, by=c("cow_ccode", "year")) %>%  
-  arrange(cow_ccode, year) %>%
   mutate(dip_rep_a=ifelse(is.na(country_ambassador),0, 1)) %>% #Created a variable for inferred US representation. Check this variable against the dataset by Moyer 2016. There may be a discrepancy due to bureaucratic delays and so on. For instance, there may be a diplomatic relationship but there is a delay in confirming him/her and the DCM serves as CM instead. 
   mutate(ambassador=ifelse(position=="Ambassador Extraordinary and Plenipotentiary",1, 0)) %>%
-  
+  group_by(year, cow_ccode) %>%
+  summarise(dip_rep_a=max(dip_rep_a),
+            politicalappointee_year=mean(politicalappointee, na.rm = TRUE),
+            performanceMU_year=mean(performanceMU, na.rm = TRUE),
+            ambassador_year=mean(ambassador, na.rm = TRUE)
+            ) %>%
+  right_join(states_70s, by=c("cow_ccode", "year")) %>%  
+  mutate(dip_rep_a=replace(dip_rep_a, is.na(dip_rep_a), 0)) 
+
 ```
 
 #U.S. Diplomatic Visits
@@ -703,50 +712,19 @@ icb<-
 #max(icb$yrterm-icb$systrgyr, na.rm=TRUE)
 ```
 
-#Compare the ambassador-country-year data
+#Compare the country-year data
 ```{r}
-us_dip_rep_app_cable_n_vis<-
-  us_dip_rep_app %>%
-  left_join(us_dip_rep_moyer, by=c("cow_ccode", "year")) %>%
-  left_join(cable_n_country_year, by=c("cow_ccode", "year")) %>% #Note NAs for country_ambassor and country_name
-  left_join(us_dip_vis, by=c("cow_ccode", "year")) %>%
-  dplyr::select(-c(country_ambassador, ambassador_name, position, country_name, dip_rep_a))
-```  
-
-##Descriptive statistics
-```{r}
-setwd("/Users/clarahsuong/chronos_data_intro")
-
-stargazer(as.data.frame(us_dip_rep_app_cable_n_vis), 
-          type = "html", 
-          title="Summary Statistics of the Ambassador-Country-Year Level Data", 
-          digits=1, 
-          out="./data_analysis_output/desc_us_dip_rep_app_cable_n_vis.html"#,
-          #covariate.labels=c("Miles/(US)gallon",)
-          )
-```
-
-##Correlation plots
-```{r}
-M<-cor(us_dip_rep_app_cable_n_vis, use = "complete.obs")
-M
-corrplot(M, method = "ellipse")
-#corrplot.mixed(M)
-
-res1 <- cor.mtest(us_dip_rep_app_cable_n_vis, conf.level = .95)
-res2 <- cor.mtest(us_dip_rep_app_cable_n_vis, conf.level = .99)
-
-## specialized the insignificant value according to the significant level
-corrplot(M, p.mat = res1$p, sig.level = .05)
-```
-
-#Compare the country-year datasets
-```{r}
-us.cable_n.rep_m.vis.evt<-
+us_dip_c_y<-
   cable_n_70s_country_year %>%
-  left_join(us_dip_rep_moyer, by=c("cow_ccode", "year")) %>% 
-  left_join(us_dip_vis, by=c("cow_ccode", "year","cow_stateabb","cow_statename")) %>%
-  left_join(us_dip_evt, by=c("cow_ccode", "year","cow_stateabb","cow_statename")) 
+  left_join(us_dip_rep_moyer, by=c("cow_ccode", "year")) %>%
+  left_join(us_dip_rep_app, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
+  left_join(us_dip_vis, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
+  left_join(us_dip_evt, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
+  mutate(rep_diff=ifelse(dip_rep_a!=dip_rep_m,1, 0))
+
+#How is dip_rep_m different from dip_rep_a?
+table(us_dip_c_y$rep_diff)
+
 ```  
 
 ```{r echo=FALSE}
@@ -759,96 +737,275 @@ ggplot(us.cable_n.rep_m.vis.evt,
 
 ##Correlation plots
 ```{r}
-M<-cor(us.cable_n.rep_m.vis.evt[c("n_c_y","dip_rep_m","dip_focus","bi_PRE","bi_SOS","evt_n_c_y")], use = "complete.obs")
+DF<-us_dip_c_y[c("n_c_y","dip_focus","dip_rep_m",
+                                     #"dip_rep_a",
+                                     "politicalappointee_year","performanceMU_year",
+                                     "bi_PRE","bi_SOS","evt_n_c_y")]
+M<-cor(DF, use = "complete.obs")
 M
 corrplot(M, method = "ellipse")
 #corrplot.mixed(M)
 
-res1 <- cor.mtest(us.cable_n.rep_m.vis.evt[c("n_c_y","dip_rep_m","dip_focus","bi_PRE","bi_SOS","evt_n_c_y")], conf.level = .95)
-res2 <- cor.mtest(us.cable_n.rep_m.vis.evt[c("n_c_y","dip_rep_m","dip_focus","bi_PRE","bi_SOS","evt_n_c_y")], conf.level = .99)
+res1 <- cor.mtest(DF, conf.level = .95)
+res2 <- cor.mtest(DF, conf.level = .99)
 
 corrplot(M, p.mat = res1$p, sig.level = .05)
+```
+
+###Check for overdispersion of the DV
+```{r}
+is.pbalanced(us_dip_c_y)
+
+plot(table(us_dip_c_y$n_c_y))
+clog <- function(x) log(x + 0.5)
+cfac <- function(x, breaks = NULL) {
+if(is.null(breaks)) breaks <- unique(quantile(x, 0:10/10))
+x <- cut(x, breaks, include.lowest = TRUE, right = FALSE)
+levels(x) <- paste(breaks[-length(breaks)], ifelse(diff(breaks) > 1,
+  c(paste("-", breaks[-c(1, length(breaks))] - 1, sep = ""), "+"), ""),
+  sep = "")
+return(x)
+}
+plot(clog(n_c_y) ~ dip_rep_m, data = us_dip_c_y)
+plot(clog(n_c_y) ~ dip_focus, data = us_dip_c_y)
+plot(clog(n_c_y) ~ dip_rep_a, data = us_dip_c_y)
+plot(clog(n_c_y)~ politicalappointee_year, data = us_dip_c_y)
+plot(clog(n_c_y) ~ performanceMU_year, data = us_dip_c_y)
+plot(clog(n_c_y) ~ ambassador_year, data = us_dip_c_y)
+plot(clog(n_c_y) ~ bi_PRE, data = us_dip_c_y)
+plot(clog(n_c_y) ~ bi_SOS, data = us_dip_c_y)
+plot(clog(n_c_y) ~ cfac(evt_n_c_y), data = us_dip_c_y)
+
+glm.nb_politicalappointee <- MASS::glm.nb(n_c_y~politicalappointee_year, data = us_dip_c_y)
+
+coeftest(glm.nb_politicalappointee, vcov = sandwich)
 ```
 
 ##Fixed Effects
 ```{r, results='asis', warning=FALSE,message=FALSE}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-fixed1.1 <- pglm(n_c_y~
+fixed_rep_a <- pglm(n_c_y~
+                   #dip_rep_m#+
+                   #dip_focus+
+                   dip_rep_a#+
+                   #politicalappointee_year+
+                   #performanceMU_year+
+                   #bi_PRE+
+                   #bi_SOS+
+                   #evt_n_c_y
+               ,
+               data=us_dip_c_y, 
+               effect = "twoways",
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               method = "nr",
+               print.level = 0
+              )
+m_rep_a=summary(fixed_rep_a)
+m_rep_a
+
+coef_test(fixed_m_rep_a, vcov = "CR1", cluster = "individual", test = "naive-t")
+
+
+fixed_rep_m <- pglm(n_c_y~
                    dip_rep_m#+
                    #dip_focus+
+                   #dip_rep_a+
+                   #politicalappointee_year+
+                   #performanceMU_year+
                    #bi_PRE+
                    #bi_SOS+
                    #evt_n_c_y
                ,
-               data=us.cable_n.rep_m.vis.evt, 
+               data=us_dip_c_y, 
                index=c("cow_ccode", "year"), 
                family = negbin, 
+              effect = "twoways",
                model="within", 
-               method = "nr"
+               method = "nr",
+               print.level = 0
               )
-m1.1=summary(fixed1.1)
+m_rep_m=summary(fixed_rep_m)
+m_rep_m
 
-fixed1.2 <- pglm(n_c_y~
-                   dip_rep_m+
+fixed_rep_m2 <- pglm(n_c_y~
+                   #dip_rep_m+
                    dip_focus#+
+                   #dip_rep_a#+
+                   #politicalappointee_year+
+                   #performanceMU_year+
                    #bi_PRE+
                    #bi_SOS+
                    #evt_n_c_y
                ,
-               data=us.cable_n.rep_m.vis.evt, 
+               data=us_dip_c_y, 
                index=c("cow_ccode", "year"), 
                family = negbin, 
                model="within", 
-               method = "nr"
+               effect = "twoways",
+               method = "nr",
+               print.level = 0
               )
-m1.2=summary(fixed1.2)
+m_rep_m2=summary(fixed_rep_m2)
+m_rep_m2
 
-fixed1.3 <- pglm(n_c_y~
+fixed_rep_m2_app <- pglm(n_c_y~
                    dip_rep_m+
                    dip_focus+
-                   bi_PRE#+
+                   #dip_rep_a+
+                   politicalappointee_year#+
+                   #performanceMU_year#+
+                   #bi_PRE+
                    #bi_SOS+
                    #evt_n_c_y
                ,
-               data=us.cable_n.rep_m.vis.evt, 
+               data=us_dip_c_y, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               effect = "twoways",
+               method = "nr",
+               print.level = 0
+              )
+m_rep_m2_app=summary(fixed_rep_m2_app)
+m_rep_m2_app
+
+fixed_rep_m2_vis <- pglm(n_c_y~
+                   dip_rep_m+
+                   dip_focus+
+                   #dip_rep_a+
+                   #politicalappointee_year+
+                   #performanceMU_year#+
+                   bi_PRE#+
+                   #bi_SOS#+
+                   #evt_n_c_y
+               ,
+               data=us_dip_c_y, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               effect = "twoways",
+              method = "nr",
+               print.level = 0
+              )
+m_rep_m2_vis=summary(fixed_rep_m2_vis)
+m_rep_m2_vis
+
+fixed_rep_m2_evt <- pglm(n_c_y~
+                   dip_rep_m+
+                   dip_focus+
+                   #dip_rep_a+
+                   #politicalappointee_year+
+                   #performanceMU_year#+
+                   #bi_PRE#+
+                   #bi_SOS#+
+                   evt_n_c_y
+               ,
+               data=us_dip_c_y, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               effect = "twoways",
+               method = "nr",
+               print.level = 0)
+m_rep_m2_evt=summary(fixed_rep_m2_evt)
+m_rep_m2_evt
+```
+
+```{r}
+#Unestimated pglm models
+fixed_rep_m_app <- pglm(n_c_y~
+                   dip_rep_m+
+                   #dip_focus+
+                   #dip_rep_a+
+                   politicalappointee_year#+
+                   #performanceMU_year#+
+                   #bi_PRE+
+                   #bi_SOS+
+                   #evt_n_c_y
+               ,
+               data=us_dip_c_y, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               method = "nr",
+               print.level = 0
+              )
+m_rep_m_app=summary(fixed_rep_m_app)
+m_rep_m_app
+
+fixed_rep_m_evt <- pglm(n_c_y~
+                   dip_rep_m+
+                   #dip_focus+
+                   #dip_rep_a+
+                   #politicalappointee_year+
+                   #performanceMU_year#+
+                   #bi_PRE#+
+                   #bi_SOS#+
+                   evt_n_c_y
+               ,
+               data=us_dip_c_y, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               method = "nr",
+               print.level = 0)
+m_rep_m_evt=summary(fixed_rep_m_evt)
+m_rep_m_evt
+
+fixed1.5 <- pglm(n_c_y~
+                   #dip_rep_m+
+                   #dip_focus+
+                   #dip_rep_a+
+                   #politicalappointee_year+
+                   #performanceMU_year#+
+                   #bi_PRE#+
+                   #bi_SOS#+
+                   evt_n_c_y
+               ,
+               data=us_cable_n_dip_rep_app_vis_evt, 
                index=c("cow_ccode", "year"), 
                family = negbin, 
                model="within", 
                method = "nr"
               )
-m1.3=summary(fixed1.3)
 
-fixed1.4 <- pglm(n_c_y~
+fixed1.6 <- pglm(n_c_y~
                    dip_rep_m+
                    dip_focus+
+                   #dip_rep_a+
+                   politicalappointee_year+
+                   #performanceMU_year#+
+                   #bi_PRE#+
+                   #bi_SOS#+
+                   evt_n_c_y
+               ,
+               data=us_cable_n_dip_rep_app_vis_evt, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               method = "nr",
+               print.level = 0)
+
+fixed_rep_m_app_vis_evt <- pglm(n_c_y~
+                   dip_rep_m+
+                   dip_focus+
+                   #dip_rep_a+
+                   politicalappointee_year+
+                   ##performanceMU_year#+
                    bi_PRE+
                    #bi_SOS+
                    evt_n_c_y
                ,
-               data=us.cable_n.rep_m.vis.evt, 
+               data=us_dip_c_y, 
                index=c("cow_ccode", "year"), 
                family = negbin, 
-               model="within", 
                method = "nr"
-              )
-m1.4=summary(fixed1.4)
-
-fixed1.8 <- pglm(n_c_y~
-                   dip_rep_m+
-                   dip_focus+
-                   #bi_PRE+
-                   bi_SOS+
-                   evt_n_c_y
-               ,
-               data=us.cable_n.rep_m.vis.evt, 
-               index=c("cow_ccode", "year"), 
-               family = negbin, 
-               model="within", 
-               method = "nr"
-              )
-m1.8=summary(fixed1.8)
-
+               ,print.level = 0
+               )
+m_rep_m_app_vis_evt=summary(fixed_rep_m_app_vis_evt)
+m_rep_m_app_vis_evt
 ```
 
 ```{r}
@@ -942,9 +1099,8 @@ pooling2 <- pglm(n_c_y~
               )
 summary(pooling2)
 
-cable_n_irep_app<-
-  cable_n_country_y %>%
-  inner_join(us_dip_irep_app, by=c("year", "cow_ccode")) 
+```{r}
+#Negative binomial models without panel effect and with cluster SEs and lagged years
 
 glm.nb_irep1 <- glm.nb(n_c_y~dip_irep, data = cable_n_irep_app)
 
@@ -965,18 +1121,6 @@ stargazer(glm.nb_irep1,
           dep.var.labels=c("Number of Cables Tagged"),
           #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
           out="../data_analysis_output/cable_n_irep_app.txt")
-
-stargazer(glm.nb_irep1,
-          glm.nb_amb,
-          glm.nb_politicalappointee, 
-          glm.nb_good,
-          glm.nb_bad,
-          type="html",
-          dep.var.labels=c("Number of Cables Tagged"),
-          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
-          out="../data_analysis_output/cable_n_irep_app.html")
-
-
 ```
 
 #Slightly modified from the analysis in Lebovic and Saunders (2016)' Tables 3 and 4

@@ -1,0 +1,36 @@
+
+Country-Years with Most Cables
+===================================================================
+Year       Tagged Country       Number of Cables Relative Frequency
+-------------------------------------------------------------------
+1976           Russia                24856               1%        
+1975           Russia                23404               1%        
+1978           Russia                22244               1%        
+1979           Russia                21978               1%        
+1977           Russia                21836               1%        
+1974           Russia                20876               1%        
+1979            Iran                 14433               1%        
+1977       United Kingdom            14145               1%        
+1979           Israel                13974               1%        
+1978           Israel                13918               1%        
+1976 German Democratic Republic      13775               1%        
+1977 German Democratic Republic      13606               1%        
+1976       United Kingdom            12885               0%        
+1979           Egypt                 12764               0%        
+1978 German Democratic Republic      12733               0%        
+1978       United Kingdom            12630               0%        
+1979       United Kingdom            12605               0%        
+1975 German Democratic Republic      12228               0%        
+1975           Japan                 12087               0%        
+1978           Egypt                 11988               0%        
+1975       United Kingdom            11816               0%        
+1977           Egypt                 11806               0%        
+1979 German Democratic Republic      11778               0%        
+1976           Japan                 11708               0%        
+1979           France                11648               0%        
+1976           Egypt                 11522               0%        
+1978           Japan                 11472               0%        
+1977           Israel                11380               0%        
+1974           Japan                 11307               0%        
+1977           Japan                 11097               0%        
+-------------------------------------------------------------------

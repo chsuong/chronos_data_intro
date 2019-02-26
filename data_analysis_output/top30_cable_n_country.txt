@@ -1,0 +1,36 @@
+
+Countries Most Frequently Tagged in Cables
+==============================================================
+Country                    Number of Cables Relative Frequency
+--------------------------------------------------------------
+Russia                          144726              6%        
+United Kingdom                  78832               3%        
+German Democratic Republic      78192               3%        
+Japan                           73518               3%        
+Israel                          68113               3%        
+Egypt                           67582               3%        
+France                          65907               3%        
+Mexico                          48875               2%        
+Canada                          48519               2%        
+Iran                            45385               2%        
+Italy                           44763               2%        
+China                           43965               2%        
+India                           43688               2%        
+Thailand                        42668               2%        
+German Federal Republic         42379               2%        
+South Korea                     38899               1%        
+Turkey                          38411               1%        
+South Africa                    35767               1%        
+Philippines                     35227               1%        
+Poland                          35157               1%        
+Brazil                          32959               1%        
+Greece                          32763               1%        
+Saudi Arabia                    31929               1%        
+Romania                         31062               1%        
+Spain                           31004               1%        
+Yugoslavia                      29965               1%        
+Argentina                       29303               1%        
+Pakistan                        27973               1%        
+Chile                           27264               1%        
+Australia                       26936               1%        
+--------------------------------------------------------------
