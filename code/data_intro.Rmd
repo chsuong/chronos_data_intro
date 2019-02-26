@@ -574,7 +574,8 @@ us_dip_rep_app <-
   right_join(states_70s, by=c("cow_ccode", "year")) %>%  
   arrange(cow_ccode, year) %>%
   mutate(dip_rep_a=ifelse(is.na(country_ambassador),0, 1)) %>% #Created a variable for inferred US representation. Check this variable against the dataset by Moyer 2016. There may be a discrepancy due to bureaucratic delays and so on. For instance, there may be a diplomatic relationship but there is a delay in confirming him/her and the DCM serves as CM instead. 
-  mutate(ambassador=ifelse(position=="Ambassador Extraordinary and Plenipotentiary",1, 0))
+  mutate(ambassador=ifelse(position=="Ambassador Extraordinary and Plenipotentiary",1, 0)) %>%
+  
 ```
 
 #U.S. Diplomatic Visits
