@@ -833,10 +833,26 @@ fixed1.4 <- pglm(n_c_y~
               )
 m1.4=summary(fixed1.4)
 
-htmlreg(fixed1.1,
-          fixed1.2,
-          fixed1.3,          
-          fixed1.4)
+var = c('Intercept', 
+        "dip_rep_m",
+        "dip_focus", 
+        "bi_PRE", 
+        "bi_SOS",
+        "evt_n_c_y")
+
+model=summary(fixed1.4)
+
+model_summary <- 
+  model$estimate %>% 
+  as.data.frame() %>% 
+  mutate(term = var, 
+         Estimate = round(Estimate, 2), 
+         SE = round(`Std. error`, 2), 
+         p.value = stars.pval(`Pr(> t)`)) %>% 
+ select(term, Estimate, SE, p.value)
+
+xtable(model_summary)
+
 ```
 
 stargazer(fixed1.1,
