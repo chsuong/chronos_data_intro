@@ -206,7 +206,7 @@ states_70s<-
   rowwise() %>%
   do(data.frame(cow_ccode = .$cow_ccode, year = seq(.$styear, .$endyear, by = 1))) %>%
   filter(year>1972 & year<1980) %>%
-  left_join(states, by="cow_ccode")
+  left_join(states, by="cow_ccode") 
 
 #  read_csv("./external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
 #  filter(year>1969 & year<1981) %>%
@@ -282,10 +282,9 @@ load("./data/cable_n_country_date.RData") #Note that this does neither all dates
 cable_n_70s_country_year<-
   cable_n_country_date %>%
   mutate(year=lubridate::year(date)) %>%
-  group_by(year, cow_ccode, country_name) %>%
+  group_by(year, cow_ccode) %>%
   summarise(n_c_y = sum(n)) %>%
   right_join(states_70s, by=c("year", "cow_ccode"))%>%
-  select(-country_name) %>%
   mutate(n_c_y= replace(n_c_y, is.na(n_c_y), 0)) %>%
   ungroup %>%
   mutate(total_n = sum(n_c_y)) %>%
@@ -369,16 +368,14 @@ stargazer(as.data.frame(cable_n_70s_country_year)[c("year", "cow_ccode", "n_c_y"
           title="Summary Statistics of Cable Traffic by Country-Year", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_country_year.txt",
-          covariate.labels=c("Year", "COW Codes of Countries Tagged by Cables", "Cable Traffic for Each Country-Year")
-          )
+          covariate.labels=c("Year", "COW Codes of Countries Tagged by Cables", "Cable Traffic for Each Country-Year"))
 
 stargazer(as.data.frame(cable_n_70s_country_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "html", 
           title="Summary Statistics of Cable Traffic by Country-Year", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_country_year.html",
-          covariate.labels=c("Year", "COW Codes of Countries Tagged by Cables", "Cable Traffic for Each Country-Year")
-          )
+          covariate.labels=c("Year", "COW Codes of Countries Tagged by Cables", "Cable Traffic for Each Country-Year"))
 ```
 ##Country-years with most cables
 ```{r}
@@ -408,14 +405,14 @@ stargazer(table_country_year_top10[c("year", "cow_statename", "n_c_y","rel.freq"
           out="./data_analysis_output/top10_cable_n_country_year.html",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 ```
-##Country-years with least cables
+##Country-years with fewest cables
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 table_country_year_bottom10<- 
   cable_n_70s_country_year %>%
   mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 0), "%")) %>%
-  arrange(n_c_y) %>%
+  arrange(desc(n_c_y)) %>%
   #filter(n_c_y<10) 
   top_n(n = -10, wt = n_c_y) 
 
@@ -423,7 +420,7 @@ stargazer(table_country_year_bottom10[c("year", "cow_statename", "n_c_y","rel.fr
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Country-Years with Least Cables", 
+          title="Country-Years with Fewest Cables", 
           digits=1, 
           out="./data_analysis_output/bottom10_cable_n_country_year.txt",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
@@ -432,7 +429,7 @@ stargazer(table_country_year_bottom10[c("year", "cow_statename", "n_c_y","rel.fr
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Country-Years with Least Cables", 
+          title="Country-Years with Fewest Cables", 
           digits=1, 
           out="./data_analysis_output/bottom10_cable_n_country_year.html",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
@@ -456,21 +453,19 @@ stargazer(table_country_top10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Countries Most Tagged in Cables", 
+          title="Countries Most Frequently Tagged in Cables", 
           digits=1, 
           out="./data_analysis_output/top10_cable_n_country.txt",
-          covariate.labels=c("Country", "Number of Cables", "Relative Frequency")
-          )
+          covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 
 stargazer(table_country_top10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Countries Most Tagged in Cables", 
+          title="Countries Most Frequently Tagged in Cables", 
           digits=1, 
           out="./data_analysis_output/top10_cable_n_country.html",
-          covariate.labels=c("Country", "Number of Cables", "Relative Frequency")
-          )
+          covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 ```
 
 ##Countries least tagged in cables
@@ -491,21 +486,19 @@ stargazer(table_country_bottom10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Countries Least Tagged in Cables", 
+          title="Countries Least Frequently Tagged in Cables", 
           digits=1, 
           out="./data_analysis_output/bottom10_cable_n_country.txt",
-          covariate.labels=c("Country", "Number of Cables", "Relative Frequency")
-          )
+          covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 
 stargazer(table_country_bottom10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Countries Least Tagged in Cables", 
+          title="Countries Least Frequently Tagged in Cables", 
           digits=1, 
           out="./data_analysis_output/bottom10_cable_n_country.html",
-          covariate.labels=c("Country", "Number of Cables", "Relative Frequency")
-          )
+          covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 ```
 
 #U.S. diplomatic representation
@@ -668,7 +661,7 @@ us_dip_evt[us_dip_evt$source %in% setdiff(us_dip_evt$source, iso_3166$Alpha_3),]
 #VMN: a typo for VNM (Vietnam)? 
 #YUG: Transitional reservations for former Yugoslavia/Serbia and Montenegro (https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3 https://wits.worldbank.org/wits/wits/witshelp/content/codes/country_codes.htm)
 
-us_dip_evt_country_year<-
+us_dip_evt<-
   read_csv("./external_data/carter_2018/AmericanDiplomacyDataset.csv", locale = locale(encoding = "UTF-8")) %>%
   #filter(1969<year & year<1981) %>%
   mutate(cow_ccode_source=countrycode(source, 'iso3c','cown'),
@@ -686,8 +679,7 @@ us_dip_evt_country_year<-
   tally() %>%
   right_join(states_70s, by=c("cow_ccode", "year")) %>%
   rename(evt_n_country_year=n) %>%
-  mutate(evt_n_country_year= replace(evt_n_country_year, is.na(evt_n_country_year), 0)) 
-
+  mutate(evt_n_country_year= replace(evt_n_country_year, is.na(evt_n_country_year), 0))
 ```
 
 #Import and load the data on international crises
@@ -704,7 +696,7 @@ icb<-
 #max(icb$yrterm-icb$systrgyr, na.rm=TRUE)
 ```
 
-##Compare the ambassador-country-year datasets
+#Compare the ambassador-country-year data
 ```{r}
 us_dip_rep_app_cable_n_vis<-
   us_dip_rep_app %>%
@@ -714,7 +706,20 @@ us_dip_rep_app_cable_n_vis<-
   dplyr::select(-c(country_ambassador, ambassador_name, position, country_name, dip_rep_a))
 ```  
 
-###Correlation plots
+##Descriptive statistics
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+stargazer(as.data.frame(us_dip_rep_app_cable_n_vis), 
+          type = "html", 
+          title="Summary Statistics of the Ambassador-Country-Year Level Data", 
+          digits=1, 
+          out="./data_analysis_output/desc_us_dip_rep_app_cable_n_vis.html"#,
+          #covariate.labels=c("Miles/(US)gallon",)
+          )
+```
+
+##Correlation plots
 ```{r}
 M<-cor(us_dip_rep_app_cable_n_vis, use = "complete.obs")
 M
@@ -728,21 +733,7 @@ res2 <- cor.mtest(us_dip_rep_app_cable_n_vis, conf.level = .99)
 corrplot(M, p.mat = res1$p, sig.level = .05)
 ```
 
-###Descriptive statistics
-```{r}
-
-setwd("/Users/clarahsuong/chronos_data_intro")
-
-stargazer(as.data.frame(us_dip_rep_app_cable_n_vis), 
-          type = "html", 
-          title="Summary Statistics of the Ambassador-Country-Year Level Data", 
-          digits=1, 
-          out="./data_analysis_output/desc_us_dip_rep_app_cable_n_vis.html"#,
-          #covariate.labels=c("Miles/(US)gallon",)
-          )
-```
-
-##Compare the country-year datasets
+#Compare the country-year datasets
 ```{r}
 us_dip_rep_m_cable_n_vis<-
   us_dip_rep_moyer %>%
