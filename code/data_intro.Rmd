@@ -42,6 +42,8 @@ library(ISOcodes) #A package for ISO country codes
 library(stargazer)
 library(corrplot)
 library(pglm)
+library(xtable)
+library(gtools)
 
 #setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #If necessary, set as the working directory a location where you can save large data files with file size over 100 mb (github limitation).
 #Create a folder named "external_data" in the working directory
@@ -377,6 +379,7 @@ stargazer(as.data.frame(cable_n_70s_country_year)[c("year", "cow_ccode", "n_c_y"
           out="./data_analysis_output/desc_cable_n_country_year.html",
           covariate.labels=c("Year", "COW Codes of Countries Tagged by Cables", "Cable Traffic for Each Country-Year"))
 ```
+
 ##Country-years with most cables
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
@@ -405,6 +408,7 @@ stargazer(table_country_year_top10[c("year", "cow_statename", "n_c_y","rel.freq"
           out="./data_analysis_output/top10_cable_n_country_year.html",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 ```
+
 ##Country-years with fewest cables
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
@@ -435,7 +439,7 @@ stargazer(table_country_year_bottom10[c("year", "cow_statename", "n_c_y","rel.fr
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 ```
 
-##Countries most tagged in cables
+##Countries most frequently tagged in cables
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
@@ -468,7 +472,7 @@ stargazer(table_country_top10[c("cow_statename", "n_c","rel.freq")],
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 ```
 
-##Countries least tagged in cables
+##Countries least frequently tagged in cables
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
@@ -572,6 +576,7 @@ us_dip_rep_app <-
   mutate(dip_rep_a=ifelse(is.na(country_ambassador),0, 1)) %>% #Created a variable for inferred US representation. Check this variable against the dataset by Moyer 2016. There may be a discrepancy due to bureaucratic delays and so on. For instance, there may be a diplomatic relationship but there is a delay in confirming him/her and the DCM serves as CM instead. 
   mutate(ambassador=ifelse(position=="Ambassador Extraordinary and Plenipotentiary",1, 0))
 ```
+
 #U.S. Diplomatic Visits
 
 ##Import and load the data on U.S. diplomatic visits
@@ -678,12 +683,13 @@ us_dip_evt<-
   group_by(.dots=c("year","cow_ccode")) %>%
   tally() %>%
   right_join(states_70s, by=c("cow_ccode", "year")) %>%
-  rename(evt_n_country_year=n) %>%
-  mutate(evt_n_country_year= replace(evt_n_country_year, is.na(evt_n_country_year), 0))
+  rename(evt_n_c_y=n) %>%
+  mutate(evt_n_c_y= replace(evt_n_c_y, is.na(evt_n_c_y), 0))
 ```
 
+```{r echo=FALSE}
 #Import and load the data on international crises
-```{r results="hide"}
+
 icb<-
   read_csv("../external_data/icb/icb2v12.csv") %>%
 #Rule out crises that end before 1970 and crises that start after 1979
@@ -735,62 +741,159 @@ corrplot(M, p.mat = res1$p, sig.level = .05)
 
 #Compare the country-year datasets
 ```{r}
-us_dip_rep_m_cable_n_vis<-
-  us_dip_rep_moyer %>%
-  left_join(cable_n_country_year, by=c("cow_ccode", "year")) %>% #Note NAs for country_ambassor and country_name
-  left_join(us_dip_vis, by=c("cow_ccode", "year")) 
-
+us.cable_n.rep_m.vis.evt<-
+  cable_n_70s_country_year %>%
+  left_join(us_dip_rep_moyer, by=c("cow_ccode", "year")) %>% 
+  left_join(us_dip_vis, by=c("cow_ccode", "year","cow_stateabb","cow_statename")) %>%
+  left_join(us_dip_evt, by=c("cow_ccode", "year","cow_stateabb","cow_statename")) 
 ```  
 
-###Correlation plots
+```{r echo=FALSE}
+theme_set(theme_bw())
+ggplot(us.cable_n.rep_m.vis.evt,
+       aes(x,y,colour=factor(i)))+
+  geom_point(position=position_jitter(width=0.01))+
+  theme(legend.position="none")
+```  
+
+##Correlation plots
 ```{r}
-M<-cor(us_dip_rep_m_cable_n_vis, use = "complete.obs")
+M<-cor(us.cable_n.rep_m.vis.evt[c("n_c_y","dip_rep_m","dip_focus","bi_PRE","bi_SOS","evt_n_c_y")], use = "complete.obs")
 M
 corrplot(M, method = "ellipse")
 #corrplot.mixed(M)
 
-res1 <- cor.mtest(us_dip_rep_m_cable_n_vis, conf.level = .95)
-res2 <- cor.mtest(us_dip_rep_m_cable_n_vis, conf.level = .99)
+res1 <- cor.mtest(us.cable_n.rep_m.vis.evt[c("n_c_y","dip_rep_m","dip_focus","bi_PRE","bi_SOS","evt_n_c_y")], conf.level = .95)
+res2 <- cor.mtest(us.cable_n.rep_m.vis.evt[c("n_c_y","dip_rep_m","dip_focus","bi_PRE","bi_SOS","evt_n_c_y")], conf.level = .99)
 
-## specialized the insignificant value according to the significant level
 corrplot(M, p.mat = res1$p, sig.level = .05)
 ```
 
-###Compare the yearly cable traffic with the country-year data on (inferred) diplomatic representation
-```{r, results="hide",warning=FALSE,message=FALSE}
-#la <- pglm(patents ~ lag(log(rd), 0:5) + scisect + log(capital72) + factor(year), PatentsRDUS,
-#family = negbin, model = "within", print.level = 3, method = "nr",
-#index = c('cusip', 'year'))
+##Fixed Effects
+```{r, results='asis'}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+fixed1.1 <- pglm(n_c_y~
+                   dip_rep_m#+
+                   #dip_focus+
+                   #bi_PRE+
+                   #bi_SOS+
+                   #evt_n_c_y
+               ,
+               data=us.cable_n.rep_m.vis.evt, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               method = "nr"
+              )
+m1.1=summary(fixed1.1)
+
+fixed1.2 <- pglm(n_c_y~
+                   dip_rep_m+
+                   dip_focus#+
+                   #bi_PRE+
+                   #bi_SOS+
+                   #evt_n_c_y
+               ,
+               data=us.cable_n.rep_m.vis.evt, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               method = "nr"
+              )
+m1.2=summary(fixed1.2)
+
+fixed1.3 <- pglm(n_c_y~
+                   dip_rep_m+
+                   dip_focus+
+                   bi_PRE#+
+                   #bi_SOS+
+                   #evt_n_c_y
+               ,
+               data=us.cable_n.rep_m.vis.evt, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               method = "nr"
+              )
+m1.3=summary(fixed1.3)
+
+fixed1.4 <- pglm(n_c_y~
+                   dip_rep_m+
+                   dip_focus+
+                   bi_PRE+
+                   #bi_SOS+
+                   evt_n_c_y
+               ,
+               data=us.cable_n.rep_m.vis.evt, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               method = "nr"
+              )
+m1.4=summary(fixed1.4)
+
+htmlreg(fixed1.1,
+          fixed1.2,
+          fixed1.3,          
+          fixed1.4)
+```
+
+stargazer(fixed1.1,
+          fixed1.2,
+          fixed1.3,          
+          fixed1.4,
+          type="html",
+          dep.var.labels=c("Number of Cables Tagged"),
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          out="./data_analysis_output/negbin_cable_n_c_y.html")
+```
+
+
+fixed2 <- pglm(n_c_y~
+                   dip_rep_m+
+                   dip_focus+
+                   #bi_PRE+
+                   bi_SOS+
+                   evt_n_c_y
+               ,
+               data=us.cable_n.rep_m.vis.evt, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               method = "nr"
+              )
+#summary(fixed2)
+
+```
 
 # "pooling"
-
-pooling1 <- pglm(n_c_y ~ dip_rep_m
-              #+dip_focus
-              +bi_PRE+bi_SOS, data=us_dip_rep_m_cable_n_vis, index=c("cow_ccode", "year"), family = negbin, model="pooling"#, method = "nr"
-              )
+pooling1 <- pglm(n_c_y~
+                   dip_rep_m+
+                   dip_focus+
+                   bi_PRE+
+                   #bi_SOS+
+                   evt_n_c_y,
+                 data=us.cable_n.rep_m.vis.evt, 
+                 index=c("cow_ccode", "year"), 
+                 family = negbin, 
+                 model="pooling", 
+                 method = "nr"
+                 )
 summary(pooling1)
 
-pooling2 <- pglm(n_c_y ~ #dip_rep_m+
-              dip_focus
-              +bi_PRE+bi_SOS, data=us_dip_rep_m_cable_n_vis, index=c("cow_ccode", "year"), family = negbin, model="pooling"#, method = "nr"
+pooling2 <- pglm(n_c_y~
+                   dip_rep_m+
+                   #dip_focus+
+                   bi_PRE+
+                   #bi_SOS+
+                   evt_n_c_y,
+                 data=us.cable_n.rep_m.vis.evt, 
+                 index=c("cow_ccode", "year"), 
+                 family = negbin,
+                 index=c("cow_ccode", "year"), family = negbin, model="pooling"#, method = "nr"
               )
 summary(pooling2)
-
-fixed1 <- pglm(n_c_y ~ dip_rep_m
-              #+dip_focus
-              +bi_PRE+bi_SOS, data=us_dip_rep_m_cable_n_vis, index=c("cow_ccode", "year"), family = negbin, model="within", method = "nr"
-              )
-summary(fixed1)
-
-fixed2 <- pglm(n_c_y ~ #dip_rep_m+
-                dip_focus
-              +bi_PRE+bi_SOS, data=us_dip_rep_m_cable_n_vis, index=c("cow_ccode", "year"), family = negbin, model="within", method = "nr"
-              )
-summary(fixed2)
-
-#random <- pglm(n_c_y ~ dip_rep_m+dip_focus+bi_PRE+bi_SOS, data=us_dip_rep_m_cable_n_vis, index=c("cow_ccode", "year"), family = negbin, model="random"#, method = "nr"
-#               )
-```
 
 cable_n_irep_app<-
   cable_n_country_y %>%
