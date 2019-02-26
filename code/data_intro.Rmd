@@ -42,7 +42,7 @@ library(ISOcodes) #A package for ISO country codes
 library(stargazer)
 library(corrplot)
 library(pglm)
-library(xtable)
+#library(xtable)
 library(gtools)
 
 #setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #If necessary, set as the working directory a location where you can save large data files with file size over 100 mb (github limitation).
@@ -770,7 +770,7 @@ corrplot(M, p.mat = res1$p, sig.level = .05)
 ```
 
 ##Fixed Effects
-```{r, results='asis'}
+```{r, results='asis', warning=FALSE,message=FALSE}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 fixed1.1 <- pglm(n_c_y~
@@ -823,6 +823,7 @@ fixed1.4 <- pglm(n_c_y~
                    dip_focus+
                    bi_PRE+
                    #bi_SOS+
+                   
                    evt_n_c_y
                ,
                data=us.cable_n.rep_m.vis.evt, 
@@ -833,11 +834,29 @@ fixed1.4 <- pglm(n_c_y~
               )
 m1.4=summary(fixed1.4)
 
+fixed1.8 <- pglm(n_c_y~
+                   dip_rep_m+
+                   dip_focus+
+                   #bi_PRE+
+                   bi_SOS+
+                   evt_n_c_y
+               ,
+               data=us.cable_n.rep_m.vis.evt, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               method = "nr"
+              )
+m1.8=summary(fixed1.8)
+
+```
+
+```{r}
 var = c('Intercept', 
         "dip_rep_m",
         "dip_focus", 
         "bi_PRE", 
-        "bi_SOS",
+        #"bi_SOS",
         "evt_n_c_y")
 
 model=summary(fixed1.4)
@@ -845,14 +864,26 @@ model=summary(fixed1.4)
 model_summary <- 
   model$estimate %>% 
   as.data.frame() %>% 
-  mutate(term = var, 
+  dplyr::mutate(term = var, 
          Estimate = round(Estimate, 2), 
          SE = round(`Std. error`, 2), 
          p.value = stars.pval(`Pr(> t)`)) %>% 
- select(term, Estimate, SE, p.value)
+ select(term, Estimate, SE, p.value) %>%
+ set_caption("Table: Negative Binomial Regression of Country-Year's Number of Cables") %>%
+ htmlTable(ctable=c("solid", "double"),rnames = FALSE)
 
-xtable(model_summary)
+#write_tableHTML(tableHTML(as.data.frame(model_summary)), file = #'negbin.cable_n_c_y.html')
 
+model_summary
+
+#xtable(model_summary)
+
+tab_model(m1.1, m1.2,
+        #labelDependentVariables=labdep,
+        #labelPredictors=lab,
+        file="or_table4.html",
+        pvaluesAsNumbers=T,
+        separateConfColumn=T)
 ```
 
 stargazer(fixed1.1,
