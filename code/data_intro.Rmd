@@ -146,7 +146,7 @@ mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_r
 
 countries<-
   tbl(mydb, 'countries') %>% 
-  collect() #Note that there is no tag for "South Vietnam" but tag "VM" (id: 557) for "Vietnam" according to this table. There is also no tag for Serbia and Montenegro.
+  collect() #Note that there is no tag for "South Vietnam" but tag "VM" (id: 557) for "Vietnam" according to this table. The 1976 TAGS manual lists VN (tag id 1976) for "Viet-Nam (North)"and VS (tag id 1973) for "Viet-Nam (South)". There is also no tag for Serbia and Montenegro. 
 
 #Create a tibble dataframe of various country codes and cable tag ids
 #Note that this includes country codes and tag id for the US.
@@ -232,7 +232,7 @@ states_70s<-
 #Cable traffic by country
 
 ##Download, save, or load the tables for tags and docs (doc_id and date) in the working directory and count the number of cables tagged for each country
-```{r results='hide', message=FALSE, warning=FALSE}
+```{r results='hide'}
 
 setwd("/Users/clarahsuong/chronos_data_intro")
 
@@ -243,7 +243,7 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 
 tags<-
   tbl(mydb, 'tags') %>% 
-  dplyr::select(id, tag, category) #%>% collect()
+  dplyr::select(id, tag, category) %>% collect()
 
 tag_doc<-
   tbl(mydb, 'tag_doc') #%>% collect()
@@ -416,29 +416,29 @@ stargazer(table_country_year_top30[c("year", "cow_statename", "n_c_y","rel.freq"
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-table_country_year_bottom10<- 
+table_country_year_bottom30<- 
   cable_n_70s_country_year %>%
   mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 0), "%")) %>%
   arrange(desc(n_c_y)) %>%
   #filter(n_c_y<10) 
-  top_n(n = -10, wt = n_c_y) 
+  top_n(n = -30, wt = n_c_y) 
 
-stargazer(table_country_year_bottom10[c("year", "cow_statename", "n_c_y","rel.freq")],
+stargazer(table_country_year_bottom30[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
           title="Country-Years with Fewest Cables", 
           digits=1, 
-          out="./data_analysis_output/bottom10_cable_n_country_year.txt",
+          out="./data_analysis_output/bottom30_cable_n_country_year.txt",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 
-stargazer(table_country_year_bottom10[c("year", "cow_statename", "n_c_y","rel.freq")],
+stargazer(table_country_year_bottom30[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
           title="Country-Years with Fewest Cables", 
           digits=1, 
-          out="./data_analysis_output/bottom10_cable_n_country_year.html",
+          out="./data_analysis_output/bottom30_cable_n_country_year.html",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 ```
 
@@ -479,7 +479,7 @@ stargazer(table_country_top30[c("cow_statename", "n_c","rel.freq")],
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-table_country_bottom10<- 
+table_country_bottom30<- 
   cable_n_70s_country_year %>%
   group_by(cow_ccode, cow_stateabb, cow_statename) %>% 
   summarise(n_c = sum(n_c_y)) %>%
@@ -487,24 +487,24 @@ table_country_bottom10<-
   mutate(total_n_c= sum(n_c), 
          rel.freq = paste0(round(100 * n_c/total_n_c, 0), "%")) %>%
   arrange(desc(n_c)) %>%
-  top_n(n = -10, wt = n_c) 
+  top_n(n = -30, wt = n_c) 
 
-stargazer(table_country_bottom10[c("cow_statename", "n_c","rel.freq")],
+stargazer(table_country_bottom30[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
           title="Countries Least Frequently Tagged in Cables", 
           digits=1, 
-          out="./data_analysis_output/bottom10_cable_n_country.txt",
+          out="./data_analysis_output/bottom30_cable_n_country.txt",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 
-stargazer(table_country_bottom10[c("cow_statename", "n_c","rel.freq")],
+stargazer(table_country_bottom30[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
           title="Countries Least Frequently Tagged in Cables", 
           digits=1, 
-          out="./data_analysis_output/bottom10_cable_n_country.html",
+          out="./data_analysis_output/bottom30_cable_n_country.html",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 ```
 
