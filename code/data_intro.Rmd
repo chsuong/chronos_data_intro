@@ -30,23 +30,23 @@ library(RMySQL) #For connecting to the databse
 library(htmlTable) #For creating Word-compatible tables
 library(Hmisc)
 library(expss) #For creating Word-compatible tables
-library(sjlabelled)
-library(lubridate)
+library(sjlabelled) #For creating Word-compatible tables
+library(lubridate) #For temporal variables
 library(foreign)
 library(ggplot2)
 library(reshape2)
-library(readxl)
+#library(readxl) #For importing Excel files
 library(countrycode) #For reconciling different country codes across dataset
 library(ISOcodes) #A package for ISO country codes
 #library(MASS) #Negative binomial models
 library(stargazer)
 library(corrplot)
-library(pglm)
+library(pglm) #For negative binomial models for (unbalanced) panel data
 #library(xtable)
 library(gtools)
 library(lmtest)
 library(sandwich)
-library(plm)
+library(plm) #For linear regression models for (unbalanced) panel data
 
 #setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #If necessary, set as the working directory a location where you can save large data files with file size over 100 mb (github limitation).
 #Create a folder named "external_data" in the working directory
@@ -720,11 +720,12 @@ us_dip_c_y<-
   left_join(us_dip_rep_app, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
   left_join(us_dip_vis, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
   left_join(us_dip_evt, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
-  mutate(rep_diff=ifelse(dip_rep_a!=dip_rep_m,1, 0))
+  mutate(rep_diff=ifelse(dip_rep_a!=dip_rep_m,1, 0)) %>%
+  group_by(cow_ccode) %>%
+  mutate(lag.n_c_y = dplyr::lag(n_c_y, n = 1, default = NA))
 
 #How is dip_rep_m different from dip_rep_a?
 table(us_dip_c_y$rep_diff)
-
 ```  
 
 ```{r echo=FALSE}
@@ -738,8 +739,8 @@ ggplot(us.cable_n.rep_m.vis.evt,
 ##Correlation plots
 ```{r}
 DF<-us_dip_c_y[c("n_c_y","dip_focus","dip_rep_m",
-                                     #"dip_rep_a",
-                                     "politicalappointee_year","performanceMU_year",
+                                     "dip_rep_a",
+                                     "politicalappointee_year","performanceMU_year","ambassador_year",
                                      "bi_PRE","bi_SOS","evt_n_c_y")]
 M<-cor(DF, use = "complete.obs")
 M
@@ -776,7 +777,7 @@ plot(clog(n_c_y) ~ bi_PRE, data = us_dip_c_y)
 plot(clog(n_c_y) ~ bi_SOS, data = us_dip_c_y)
 plot(clog(n_c_y) ~ cfac(evt_n_c_y), data = us_dip_c_y)
 
-glm.nb_politicalappointee <- MASS::glm.nb(n_c_y~politicalappointee_year, data = us_dip_c_y)
+glm.nb_politicalappointee <- MASS::glm.nb(n_c_y~politicalappointee_year+lag.n_c_y, data = us_dip_c_y)
 
 coeftest(glm.nb_politicalappointee, vcov = sandwich)
 ```
@@ -791,12 +792,14 @@ fixed_rep_a <- pglm(n_c_y~
                    dip_rep_a#+
                    #politicalappointee_year+
                    #performanceMU_year+
+                   #ambassador_year+
                    #bi_PRE+
                    #bi_SOS+
-                   #evt_n_c_y
-               ,
+                   #evt_n_c_y+
+                   #lag.n_c_y
+                     ,
                data=us_dip_c_y, 
-               effect = "twoways",
+               #effect = "twoways",
                index=c("cow_ccode", "year"), 
                family = negbin, 
                model="within", 
@@ -806,8 +809,8 @@ fixed_rep_a <- pglm(n_c_y~
 m_rep_a=summary(fixed_rep_a)
 m_rep_a
 
-coef_test(fixed_m_rep_a, vcov = "CR1", cluster = "individual", test = "naive-t")
-
+coef_test(fixed_rep_a, vcov = "CR1", cluster = "individual", test = "naive-t")
+```
 
 fixed_rep_m <- pglm(n_c_y~
                    dip_rep_m#+
