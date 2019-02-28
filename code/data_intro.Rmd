@@ -120,13 +120,15 @@ dbListTables(mydb)
 dbListFields(mydb, 'docs')
 print(dbGetQuery(mydb, "Describe docs;"))
 
+
+
 #Download and save the table 'docs' in the working directory
 #getwd()
 #docs<-tbl(mydb, "docs")%>%
 #  collect() 
 
 #save(docs, file = "/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
-#load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
+load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
 
 #Note that not all cables with the value "full" for the variable "cable_type" actually include full text. 
 #Also note that variables like "page_count" and "line_count" are not really valid for cables without full text.
