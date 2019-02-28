@@ -3,6 +3,10 @@ Country-Years with Fewest Cables
 ==============================================================
 Year    Tagged Country     Number of Cables Relative Frequency
 --------------------------------------------------------------
+1978       Dominica               93                0%        
+1975        Comoros               92                0%        
+1975     Guinea-Bissau            91                0%        
+1977       Maldives               91                0%        
 1976       Maldives               89                0%        
 1973         Qatar                86                0%        
 1978        Comoros               84                0%        
@@ -29,8 +33,4 @@ Year    Tagged Country     Number of Cables Relative Frequency
 1973       Maldives               27                0%        
 1973         Congo                23                0%        
 1978        Bhutan                21                0%        
-1976        Vietnam               8                 0%        
-1973  Republic of Vietnam         0                 0%        
-1974  Republic of Vietnam         0                 0%        
-1975  Republic of Vietnam         0                 0%        
 --------------------------------------------------------------

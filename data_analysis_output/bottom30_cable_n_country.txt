@@ -3,6 +3,7 @@ Countries Least Frequently Tagged in Cables
 ==================================================================
 Country                        Number of Cables Relative Frequency
 ------------------------------------------------------------------
+Luxembourg                           3569               0%        
 Burkina Faso                         3405               0%        
 Swaziland                            3380               0%        
 Fiji                                 3248               0%        
@@ -32,5 +33,4 @@ Solomon Islands                      321                0%
 Bhutan                               277                0%        
 St. Lucia                            209                0%        
 St. Vincent and the Grenadines       139                0%        
-Republic of Vietnam                   0                 0%        
 ------------------------------------------------------------------

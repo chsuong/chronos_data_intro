@@ -19,7 +19,7 @@ knitr::opts_knit$set(root.dir = "/Users/clarahsuong/chronos_data_intro/")
 
 #Load libraries and set the working directory
 ```{r, results='hide'}
-rm(list = ls()) 
+rm(list = ls()) # clear objects in memory
 library(plyr)
 library(dplyr)
 library(dbplyr)
@@ -120,15 +120,12 @@ dbListTables(mydb)
 dbListFields(mydb, 'docs')
 print(dbGetQuery(mydb, "Describe docs;"))
 
-
-
 #Download and save the table 'docs' in the working directory
 #getwd()
-#docs<-tbl(mydb, "docs")%>%
-#  collect() 
-
-#save(docs, file = "/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
-load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
+docs<-tbl(mydb, "docs")%>%
+  collect() 
+save(docs, file = "/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
+#load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
 
 #Note that not all cables with the value "full" for the variable "cable_type" actually include full text. 
 #Also note that variables like "page_count" and "line_count" are not really valid for cables without full text.
@@ -146,26 +143,17 @@ driver = dbDriver("MySQL")
 connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
 mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
+#A list of countries according to our database
 countries<-
   tbl(mydb, 'countries') %>% 
-  collect() #Note that there is no tag for "South Vietnam" but tag "VM" (id: 557) for "Vietnam" according to this table. The 1976 TAGS manual lists VN (tag id 1976) for "Viet-Nam (North)"and VS (tag id 1973) for "Viet-Nam (South)". There is also no tag for Serbia and Montenegro. 
-
-#Create a tibble dataframe of various country codes and cable tag ids
-#Note that this includes country codes and tag id for the US.
-
-#Generate lists of all non-US (old and existing) countries. 
-states<-
-  read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/states2016.csv") %>%
-  dplyr::select("stateabb","ccode","statenme") %>%
-  filter(!ccode==2) %>% #Leave out the US
-  rename(cow_ccode=ccode,
-         cow_stateabb=stateabb, 
-         cow_statename=statenme) %>%   
-  distinct() 
+  collect() 
+#Note that there is no tag for "South Vietnam" but tag "VM" (id: 557) for "Vietnam" according to this table. The 1976 TAGS manual lists VN (tag_id 1976) for "Viet-Nam (North)"and VS (tag_id 1973) for "Viet-Nam (South)". There is also no tag_id for Serbia, Montenegro, Croatia, Azerbaijan. 
+#It's probably better to not include the list of countries with 0 cables in the paper because these may be simply missing due to errors in the metadata. 
+#US is included.
 
 #Merge ISO_3166_1 and ISO_3166_3 (ISO country codes for withdrawn countries). Note that this list often omits retired codes. 
 iso_3166<-
-  tibble::as_tibble(left_join(ISO_3166_1, ISO_3166_3, by = c("Alpha_3","Numeric","Name")))%>%
+  tibble::as_tibble(full_join(ISO_3166_1, ISO_3166_3, by = c("Alpha_3","Numeric","Name")))%>%
   mutate(Numeric=as.integer(Numeric)) %>%
   dplyr::select("Alpha_3",
          "Numeric",
@@ -173,47 +161,27 @@ iso_3166<-
          "Official_name",
          "Common_name") 
 
-country_code_tag<-
-  tbl(mydb, 'countries') %>% 
-  collect() %>%
-  mutate(country_id=as.integer(id)) %>%
-  dplyr::select(-id)
+#Generate lists of all (old and existing) countries according to COW. Note that this includes the US.
+states<-
+  read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/states2016.csv") %>%
+  dplyr::select("stateabb","ccode","statenme") %>%
+  #filter(!ccode==2) %>% #Leave out the US
+  rename(cow_ccode=ccode,
+         cow_stateabb=stateabb, 
+         cow_statename=statenme) %>%   
+  distinct() #There are duplicates. e.g. countries that existed, disappeared, and then re-appeared. 
 
-#Check whether the variable "country_id" in the table "countries" is from ISO 3166.
-#Derive COW country codes from the variable "name" in the table "countries."
-country_code_tag$cow_ccode<-countrycode(country_code_tag$name, 'country.name', 'cown') #cow_ccode for Vietnam should be 816, not 817 (error in the package countrycode) and cow_ccode for West Germany (German Federal Republic) should be 260.
-#country_code_tag$cowid2<-countrycode(country_code_tag$country_id, 'iso3n', 'cown')
-country_code_tag$iso3n<-countrycode(country_code_tag$name, 'country.name', 'iso3n') #iso3n for South Vietnam should not be 704 (country code of Vietnam) (error in the package countrycode).
-
-all(country_code_tag$country_id %in% iso_3166$Numeric)
-all(iso_3166$Numeric %in% country_code_tag$country_id)
-setdiff(country_code_tag$country_id, iso_3166$Numeric)
-country_code_tag[country_code_tag$country_id %in% setdiff(country_code_tag$country_id, iso_3166$Numeric),]
-#Most of the items with a discrepancy between the database's country ids and iso-3166 numeric seem to be defunct states or non-state entities, except East and West Germany.
-
-#Focus on countries by dropping the observations with missing tag_id or COW country code.
-country_code_tag<-
-  country_code_tag[!is.na(country_code_tag$cow_ccode) & !is.na(country_code_tag$tag_id),] %>%
-  mutate(cow_ccode= replace(cow_ccode, name=="Vietnam", 816)) %>% #Fix cow_ccode for Vietnam 
-  mutate(cow_ccode= replace(cow_ccode, name=="West Germany", 260)) %>% #Fix cow_ccode for West Germany (German Federal Republic) 
-  left_join(states, by="cow_ccode") %>% 
-  rename(country_name=name) %>%
-  dplyr::select(-iso3n) 
-#Germany and West Germany share their COW country codes.
-
-#Create a tibble dataframe of all countries that were potential diplomatic counterparts of the US in the 1970s.
-
-#Generate lists existing non-US country-year pairs for the 1970s (a universe of all possible diplomatic relations between US and other countries). Note that the dataframe below does NOT include the US but only all potential US countries who existed in the 1970s. For comparability with other datasets, we focus on the universe of potential diplomatic partners of the U.S., that is, countries that existed in the 1970s. Note that the universe of countries would differ by year!
-
+#Generate lists existing country-years for the 1970s. Note that the universe of countries would differs by year. Note that this also includes the US.
 states_70s<-
   read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/states2016.csv") %>%
   dplyr::select("ccode", "styear", "endyear") %>%
-  filter(!ccode==2) %>% #Leave out the US
+  #filter(!ccode==2) %>% #Leave out the US
   rename(cow_ccode=ccode) %>% #,cow_stateabb=stateabb, cow_statename=statenme) 
   rowwise() %>%
   do(data.frame(cow_ccode = .$cow_ccode, year = seq(.$styear, .$endyear, by = 1))) %>%
   filter(year>1972 & year<1980) %>%
-  left_join(states, by="cow_ccode") 
+  left_join(states, by="cow_ccode") %>%#Attach COW state names and abbreviations
+  distinct()
 
 #  read_csv("./external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
 #  filter(year>1969 & year<1981) %>%
@@ -228,7 +196,51 @@ states_70s<-
 #it includes country code 818 but none of the COW country datasets include it. Drop the row with cow_ccode=818.
 #it also includes 0s for countries non-existent in the 1970s as a potential diplomatic partner (e.g. Croatia with country code 344 and Bosnia and Herzegovina with country code 346).
 
-#Note: cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. Use the dataframe us_dip_vis below for now. Create the full list of country-year combinations later.  
+#Note: we cannot automatically complete the data frame with missing combinations of data (function complete) because we need to account for the difference in countries' birth date. 
+```
+###Create a dataframe linking country codes and tag_ids
+```{r}
+#Note that this includes country codes and tag_id for the US.
+country_code_tag<-
+  tbl(mydb, 'countries') %>% 
+  collect() %>%
+  mutate(country_id=as.integer(id)) %>%
+  dplyr::select(-id) %>%
+  mutate(cow_ccode=countrycode(name, 'country.name', 'cown')) %>% #Derive COW country codes from the variable "name" in the table "countries."
+  mutate(iso3n=countrycode(name, 'country.name', 'iso3n')) #Derive iso numeric country codes from the variable "name" in the table "countries."
+  
+#Check whether the variable "country_id" in the table "countries" is from ISO 3166.
+#cow_ccode for Vietnam should be 816, not 817 (error in the package countrycode) and cow_ccode for West Germany (German Federal Republic) should be 260.
+#iso3n for South Vietnam should not be 704 (country code of Vietnam) but 714 (error in the R package countrycode). The tag_id for South Vietnam is missing.
+#country_code_tag$cowid2<-countrycode(country_code_tag$country_id, 'iso3n', 'cown')
+
+all(country_code_tag$country_id %in% iso_3166$Numeric)
+all(iso_3166$Numeric %in% country_code_tag$country_id)
+setdiff(country_code_tag$country_id, iso_3166$Numeric)
+country_code_tag[country_code_tag$country_id %in% setdiff(country_code_tag$country_id, iso_3166$Numeric),]
+#Most of the items with a discrepancy between the database's country_id and iso-3166 numeric seem to be defunct states or non-state entities, except East and West Germany.
+
+#Replace the wrong COW country codes and tag_id
+country_code_tag<-
+  country_code_tag %>%
+  mutate(cow_ccode= replace(cow_ccode, name=="Vietnam", 816)) %>% #Fix cow_ccode for Vietnam 
+  mutate(cow_ccode= replace(cow_ccode, name=="West Germany", 260)) %>% #Fix cow_ccode for West Germany (German Federal Republic) 
+  mutate(tag_id=replace(tag_id, name=="South Vietnam", 1973)) %>% #Insert tag_id for South Vietnam
+  rbind(c("Vietnam",
+          0,
+          1,
+          1976,
+          704,
+          816,
+          704
+          )
+        ) %>% #Insert the second tag_id value (1976) for Vietnam 
+  mutate(cow_ccode=as.integer(cow_ccode),
+         tag_id=as.integer(tag_id)) %>%
+  inner_join(states, by="cow_ccode") %>% #Append COW state names
+  rename(country_name=name) %>%
+  filter(!is.na(cow_ccode) & !is.na(tag_id))%>% #Drop the observations with missing COW country code and missing tag_id.
+  dplyr::select(-iso3n) 
 ```
 
 #Cable traffic by country
@@ -245,59 +257,78 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 
 tags<-
   tbl(mydb, 'tags') %>% 
-  dplyr::select(id, tag, category) %>% collect()
+  dplyr::select(id, tag, category) %>% collect() #Most of the tags missing category don't seem to be country names.
+#tags[is.na(tags$category),]
 
 tag_doc<-
-  tbl(mydb, 'tag_doc') #%>% collect()
+  tbl(mydb, 'tag_doc') %>% collect() #This table includes cables tagged with South Vietnam (tag_id 1973) and Vietnam (tag_id: 1976 and 557)
+#tag_doc %>% filter(tag_id==1973)
+#tag_doc %>% filter(tag_id==1976)
+#tag_doc %>% filter(tag_id==557)
 
 doc_date2<-
   tbl(mydb, 'docs') %>% 
   dplyr::select(id, date) %>%
-  rename(doc_id=id) #%>% collect()
+  rename(doc_id=id) %>% collect()
 
-#tag_doc2<-
-#  tag_doc%>%
-#  inner_join(tags, by = c("tag_id"="id")) %>%
-#  inner_join(doc_date2, by = "doc_id") %>%
-#  mutate(year=lubridate::year(date), 
-#         month=lubridate::month(date), 
-#         date=lubridate::ymd(date), 
-#         ym=as.yearmon(paste(year, month),"%Y %m")
-#         ) %>%
-#  collect() 
-#save(tag_doc2, file = "../data/tag_doc2.RData")
-#load("./data/tag_doc2.RData")
+country_tag_doc2<-
+  tag_doc %>%
+  inner_join(doc_date2, by = "doc_id") %>%
+  inner_join(tags, by = c("tag_id"="id")) %>%
+  inner_join(country_code_tag, by="tag_id") %>%
+  mutate(year=lubridate::year(date), 
+         month=lubridate::month(date), 
+         date=lubridate::ymd(date), 
+         ym=as.yearmon(paste(year, month),"%Y %m")
+         ) 
 
-#tag_doc2_country <-
-#  tag_doc2 %>%
-#  inner_join(country_code_tag, by="tag_id") 
-#save(tag_doc2_country, file = "../data/tag_doc2_country.RData")
-#load("./data/tag_doc2_country.RData")
+#save(country_tag_doc2, file = "./data/country_tag_doc2.RData")
+#load("./data/country_tag_doc2.RData")
 
-#cable_n_country_date<-
-#  tag_doc2_country %>%
-#  group_by(.dots=c("tag_id", 
-#                   "country_id", 
-#                   "cow_ccode", 
-#                   "country_name", 
-#                   "date")) %>%
-#  tally() 
-#save(cable_n_country_date, file = "../data/cable_n_country_date.RData")
-load("./data/cable_n_country_date.RData") #Note that this does neither all dates nor all countries on the COW list.
+cable_n_country_date<-
+  country_tag_doc2 %>%
+  group_by(.dots=c("cow_ccode", 
+                   "cow_statename",
+                   "country_id", 
+                   "country_name", 
+                   "date")) %>%
+  tally() 
+#save(cable_n_country_date, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_country_date.RData")
+#load("./data/cable_n_country_date.RData") #Note that this includes neither all dates nor all countries on the COW list.
 
-#Yearly cable traffic by country-year, including 0 cables by some countries that existed in the 1970s. Note that this does NOT include the cables tagged with US, due to the dataframe states_70s. 
+#The table country_doc attempts to add West Germany and South Vietnam based on regex matching in body.
+#country_doc<-
+#  tbl(mydb, 'country_doc') %>% collect()
+#However, this table is also missing South Vietnam (country_id 714 or tag_id 1973). It seems to group (North) Vietnam and South Vietnam together, probably as a result of directly extracting Vietnam from the documents. The search in the table said there are 15,668 documents related to or tagged with Vietnam. 
+#country_doc %>% filter(country_id==714)
+#country_doc %>% filter(country_id==704)
+#It is meaningful to distinguish cables related to South Vietnam from those about (North) Vietnam. Thus, do not use this table.
+
+#Yearly cable traffic by country-year, including 0 cables by some countries that existed in the 1970s. Note that this does include the cables tagged with US, due to the dataframe states_70s. 
 cable_n_70s_country_year<-
-  cable_n_country_date %>%
-  mutate(year=lubridate::year(date)) %>%
-  group_by(year, cow_ccode) %>%
-  summarise(n_c_y = sum(n)) %>%
-  right_join(states_70s, by=c("year", "cow_ccode"))%>%
+  country_tag_doc2 %>%
+  group_by(year, cow_ccode, cow_statename, cow_stateabb) %>%
+  tally() %>%
+  right_join(states_70s, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
+  rename(n_c_y=n) %>%
   mutate(n_c_y= replace(n_c_y, is.na(n_c_y), 0)) %>%
   ungroup %>%
   mutate(total_n = sum(n_c_y)) %>%
   arrange(year, cow_ccode)
 
-#Yearly cable traffic by country-year, including 0 cables by some countries that existed anytime before 2016. Note that this does NOT include the cables tagged with US. 
+#Yearly cable traffic by country-year, including 0 cables by some countries that have ever existed. Note that this does include the cables tagged with US. 
+cable_n_country_year<-
+  country_tag_doc2 %>%
+  group_by(year, cow_ccode, cow_statename, cow_stateabb) %>%
+  tally() %>%
+  right_join(states, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
+  rename(n_c_y=n) %>%
+  mutate(n_c_y= replace(n_c_y, is.na(n_c_y), 0)) %>%
+  ungroup %>%
+  mutate(total_n = sum(n_c_y)) %>%
+  arrange(year, cow_ccode)
+
+#Yearly cable traffic by country-year, including 0 cables by some countries that existed anytime before 2016.  
 #cable_n_country_year<-
 #  cable_n_country_date %>%
 #  mutate(year=lubridate::year(date)) %>%
@@ -309,6 +340,18 @@ cable_n_70s_country_year<-
 #  ungroup %>%
 #  mutate(total_n = sum(n_c_y)) %>%
 #  arrange(year, cow_ccode)
+
+#Cable traffic by country, including 0 cables by some countries that existed in the 1970s. Note that this does include the cables tagged with US, due to the dataframe states_70s. 
+cable_n_country<-
+  country_tag_doc2 %>%
+  group_by(cow_ccode, cow_statename, cow_stateabb) %>%
+  tally() %>%
+  right_join(states, by=c("cow_ccode", "cow_stateabb","cow_statename")) %>%
+  rename(n_c=n) %>%
+  mutate(n_c= replace(n_c, is.na(n_c), 0)) %>%
+  ungroup %>%
+  mutate(total_n = sum(n_c)) %>%
+  arrange(desc(n_c))
 ```
 
 ##Examine cables tagged with certain countries as a test
@@ -528,7 +571,7 @@ us_dip_rep_moyer<-
   mutate(Year=as.numeric(Year)) %>%
   rename(year = Year) %>%
   filter(Country=="United States of America") %>%
-  mutate(cow_ccode=countrycode(Destination, 'country.name', 'cown')) %>% #us_dip_rep[is.na(us_dip_rep$cow_ccode),] COW country code for German Federal Republic is wrong and should be 260, not 255.
+  mutate(cow_ccode=countrycode(Destination, 'country.name', 'cown')) %>% #us_dip_rep[is.na(us_dip_rep$cow_ccode),] COW country code for German Federal Republic is wrong and should be 260, not 255. This is an error in the R package countrycode.
   mutate(cow_ccode= replace(cow_ccode, Destination=="German Federal Republic", 260)) %>%
   right_join(states_70s, by=c("year", "cow_ccode")) %>% #Note the missing values for Destination but not cow_ccode.
   arrange(cow_ccode, year) %>%
