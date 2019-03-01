@@ -1,0 +1,26 @@
+
+Non-U.S. Countries Most Frequently Tagged in Cables
+==============================================================
+Country                    Number of Cables Relative Frequency
+--------------------------------------------------------------
+Russia                          144726              4%        
+United Kingdom                  78832               2%        
+German Democratic Republic      78192               2%        
+Japan                           73518               2%        
+Israel                          68113               2%        
+Egypt                           67582               2%        
+France                          65907               2%        
+Mexico                          48875               1%        
+Canada                          48519               1%        
+Iran                            45385               1%        
+Italy                           44763               1%        
+China                           43965               1%        
+India                           43688               1%        
+Thailand                        42668               1%        
+German Federal Republic         42379               1%        
+South Korea                     38899               1%        
+Turkey                          38411               1%        
+South Africa                    35767               1%        
+Philippines                     35227               1%        
+Poland                          35157               1%        
+--------------------------------------------------------------
