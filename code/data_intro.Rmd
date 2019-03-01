@@ -177,6 +177,7 @@ all_states_70s<-
   read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/states2016.csv") %>%
   dplyr::select("stateabb","ccode","statenme") %>%
   #filter(!ccode==2) %>% #Leave out the US
+  mutate(statenme=as.character(statenme))%>%
   rename(cow_ccode=ccode,
          cow_stateabb=stateabb, 
          cow_statename=statenme) %>%   
@@ -195,22 +196,14 @@ states_70s<-
   rename(cow_ccode=ccode, 
          cow_stateabb=stateabb) %>%
   left_join(all_states, by=c("cow_ccode","cow_stateabb")) #Include COW state names
-  #read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/states2016.csv") %>%
-  #dplyr::select("ccode", "styear", "endyear") %>%
-  #rename(cow_ccode=ccode) %>% #,cow_stateabb=stateabb, cow_statename=statenme) 
-  #rowwise() %>%
-  #do(data.frame(cow_ccode = .$cow_ccode, year = seq(.$styear, .$endyear, by = 1))) %>%
-  #filter(year>1972 & year<1980) %>%
-  #left_join(all_states, by="cow_ccode") %>%#Attach COW state names and abbreviations
-  #distinct()
 ```
 
 ###Create a dataframe linking country codes and tag_ids
 ```{r}
 #Re-connect to the database
-driver = dbDriver("MySQL")
-connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
-mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
+#driver = dbDriver("MySQL")
+#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+#mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
 #Note that this includes country codes and tag_id for the US.
 country_code_tag<-
@@ -269,11 +262,10 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 
 tags<-
   tbl(mydb, 'tags') %>% 
-  dplyr::select(id, tag, category) %>% collect() #Most of the tags missing category don't seem to be country names.
-#tags[is.na(tags$category),]
+  dplyr::select(id, tag, category) #%>% collect() 
 
 tag_doc<-
-  tbl(mydb, 'tag_doc') %>% collect() #This table includes cables tagged with South Vietnam (tag_id 1973) and Vietnam (tag_id: 1976 and 557)
+  tbl(mydb, 'tag_doc') #%>% collect() #This table includes cables tagged with South Vietnam (tag_id 1973) and Vietnam (tag_id: 1976 and 557)
 #tag_doc %>% filter(tag_id==1973)
 #tag_doc %>% filter(tag_id==1976)
 #tag_doc %>% filter(tag_id==557)
@@ -281,31 +273,31 @@ tag_doc<-
 doc_date2<-
   tbl(mydb, 'docs') %>% 
   dplyr::select(id, date) %>%
-  rename(doc_id=id) %>% collect()
+  rename(doc_id=id) #%>% collect()
 
-country_tag_doc2<-
-  tag_doc %>%
-  inner_join(doc_date2, by = "doc_id") %>%
-  inner_join(tags, by = c("tag_id"="id")) %>%
-  inner_join(country_code_tag, by="tag_id") %>%
-  mutate(year=lubridate::year(date), 
-         month=lubridate::month(date), 
-         date=lubridate::ymd(date), 
-         ym=as.yearmon(paste(year, month),"%Y %m")
-         ) 
-save(country_tag_doc2, file = "./data/country_tag_doc2.RData")
-#load("./data/country_tag_doc2.RData")
+#country_tag_doc2<-
+#  tag_doc %>%
+#  inner_join(doc_date2, by = "doc_id") %>%
+#  inner_join(tags, by = c("tag_id"="id")) %>%
+#  inner_join(country_code_tag, by="tag_id") %>%
+#  mutate(year=lubridate::year(date), 
+#         month=lubridate::month(date), 
+#         date=lubridate::ymd(date), 
+#         ym=as.yearmon(paste(year, month),"%Y %m")
+#         ) 
+#save(country_tag_doc2, file = "./data/country_tag_doc2.RData")
+load("./data/country_tag_doc2.RData")
 
-cable_n_country_day<-
-  country_tag_doc2 %>%
-  group_by(.dots=c("cow_ccode", 
-                   "cow_statename",
-                   "country_id", 
-                   "country_name", 
-                   "date")) %>%
-  tally() 
-save(cable_n_country_day, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_country_day.RData")
-#load("./data/cable_n_country_date.RData") #Note that this includes neither all dates nor all countries on the COW list.
+#cable_n_country_day<-
+#  country_tag_doc2 %>%
+#  group_by(.dots=c("cow_ccode", 
+#                   "cow_statename",
+#                   "country_id", 
+#                   "country_name", 
+#                   "date")) %>%
+#  tally() 
+#save(cable_n_country_day, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_country_day.RData")
+load("./data/cable_n_country_day.RData") #Note that this includes neither all dates nor all countries on the COW list.
 
 #The table country_doc attempts to add West Germany and South Vietnam based on regex matching in body.
 #country_doc<-
@@ -315,33 +307,61 @@ save(cable_n_country_day, file = "/Users/clarahsuong/chronos_data_intro/data/cab
 #country_doc %>% filter(country_id==704)
 #It is meaningful to distinguish cables related to South Vietnam from those about (North) Vietnam. Thus, do not use this table.
 
-#Yearly cable traffic by country-year, including 0 cables by some countries that have ever existed. Note that this does include the cables tagged with US. 
-cable_n_all_states_year<-
-  country_tag_doc2 %>%
-  group_by(year, cow_ccode, cow_statename, cow_stateabb) %>%
-  tally() %>%
-  right_join(all_states, by=c("cow_ccode", "cow_stateabb","cow_statename")) %>%
-  rename(n_c_y=n) %>%
-  mutate(n_c_y= replace(n_c_y, is.na(n_c_y), 0)) %>%
-  ungroup %>%
-  mutate(total_n = sum(n_c_y)) %>%
-  arrange(year, cow_ccode)
-save(cable_n_all_country_year, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_all_country_year.RData")
-#load("./data/cable_n_all_country_year.RData")
+#Yearly cable traffic by state-year, including 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
+#cable_n_all_states_year<-
+#  country_tag_doc2 %>%
+#  group_by(year, cow_ccode, cow_statename, cow_stateabb) %>%
+#  tally() %>%
+#  right_join(all_states_70s, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
+#  rename(n_c_y=n) %>%
+#  mutate(n_c_y= replace(n_c_y, is.na(n_c_y), 0)) %>%
+#  ungroup %>%
+#  mutate(total_n = sum(n_c_y)) %>%
+#  arrange(year, cow_ccode)
+#save(cable_n_all_states_year, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_all_states_year.RData")
+load("./data/cable_n_all_states_year.RData")
 
-#Cable traffic by country, including 0 cables by some countries that have ever existed. Note that this does include the cables tagged with US. 
-cable_n_all_states<-
-  country_tag_doc2 %>%
-  group_by(cow_ccode, cow_statename, cow_stateabb) %>%
-  tally() %>%
-  right_join(all_states, by=c("cow_ccode", "cow_stateabb","cow_statename")) %>%
-  rename(n_c=n) %>%
-  mutate(n_c= replace(n_c, is.na(n_c), 0)) %>%
-  ungroup %>%
-  mutate(total_n = sum(n_c)) %>%
-  arrange(desc(n_c))
-save(cable_n_all_states, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_all_states.RData")
-#load("./data/cable_n_all_states.RData")
+#Cable traffic by state, including 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
+#cable_n_all_states<-
+#  country_tag_doc2 %>%
+#  group_by(cow_ccode, cow_statename, cow_stateabb) %>%
+#  tally() %>%
+#  right_join(all_states, by=c("cow_ccode", "cow_stateabb","cow_statename")) %>%
+#  rename(n_c=n) %>%
+#  mutate(n_c= replace(n_c, is.na(n_c), 0)) %>%
+#  ungroup %>%
+#  mutate(total_n = sum(n_c)) %>%
+#  arrange(desc(n_c))
+#save(cable_n_all_states, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_all_states.RData")
+load("./data/cable_n_all_states.RData")
+
+#Yearly cable traffic by state-year, excluding 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
+#cable_n_states_70s_year<-
+#  country_tag_doc2 %>%
+#  group_by(year, cow_ccode, cow_statename, cow_stateabb) %>%
+#  tally() %>%
+#  right_join(states_70s, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
+#  rename(n_c_y=n) %>%
+#  mutate(n_c_y= replace(n_c_y, is.na(n_c_y), 0)) %>%
+#  ungroup %>%
+#  mutate(total_n = sum(n_c_y)) %>%
+#  arrange(year, cow_ccode)
+#save(cable_n_states_70s_year, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_states_70s_year.RData")
+load("./data/cable_n_states_70s_year.RData")
+
+#Cable traffic by state, including 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
+#cable_n_states_70s<-
+#  country_tag_doc2 %>%
+#  group_by(cow_ccode, cow_statename, cow_stateabb) %>%
+#  tally() %>%
+#  right_join(states_70s, by=c("cow_ccode", "cow_stateabb","cow_statename")) %>%
+#  rename(n_c=n) %>%
+#  mutate(n_c= replace(n_c, is.na(n_c), 0)) %>%
+#  ungroup %>%
+#  mutate(total_n = sum(n_c)) %>%
+#  arrange(desc(n_c))
+#save(states_70s, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_states_70s.RData")
+load("./data/cable_n_states_70s.RData")
 ```
 
 ##Examine cables tagged with certain countries as a test
@@ -403,77 +423,92 @@ cable_egypt<-
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-stargazer(as.data.frame(cable_n_70s_country_year)[c("year", "cow_ccode", "n_c_y")], 
+stargazer(as.data.frame(cable_n_all_states_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "text", 
-          title="Summary Statistics of Cable Traffic by Country-Year", 
+          title="Summary Statistics of Cable Traffic by Country-Year (Incl. Historic Countries)", 
           digits=1, 
-          out="./data_analysis_output/desc_cable_n_country_year.txt",
-          covariate.labels=c("Year", "COW Codes of Countries Tagged by Cables", "Cable Traffic for Each Country-Year"))
+          out="./data_analysis_output/desc_cable_n_all_states_year.txt",
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
 
-stargazer(as.data.frame(cable_n_70s_country_year)[c("year", "cow_ccode", "n_c_y")], 
+stargazer(as.data.frame(cable_n_all_states_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "html", 
-          title="Summary Statistics of Cable Traffic by Country-Year", 
+          title="Summary Statistics of Cable Traffic by Country-Year (Incl. Historic Countries)", 
           digits=1, 
-          out="./data_analysis_output/desc_cable_n_country_year.html",
-          covariate.labels=c("Year", "COW Codes of Countries Tagged by Cables", "Cable Traffic for Each Country-Year"))
+          out="./data_analysis_output/desc_cable_n_all_states_year.html",
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+
+stargazer(as.data.frame(cable_n_states_70s_year)[c("year", "cow_ccode", "n_c_y")], 
+          type = "text", 
+          title="Summary Statistics of Cable Traffic by Country-Year (Only Existing Countries)", 
+          digits=1, 
+          out="./data_analysis_output/desc_cable_n_states_70s_year.txt",
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+
+stargazer(as.data.frame(cable_n_states_70s_year)[c("year", "cow_ccode", "n_c_y")], 
+          type = "html", 
+          title="Summary Statistics of Cable Traffic by Country-Year (Only Existing Countries)", 
+          digits=1, 
+          out="./data_analysis_output/desc_cable_n_states_70s_year.html",
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
 ```
 
-##Country-years with most cables
+##Non-US country-years with most cables
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-table_country_year_top30<- 
-  cable_n_70s_country_year %>%
+table_country_year_top20<- 
+  cable_n_states_70s_year %>%
+  filter(cow_ccode!=2) %>%
   mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 0), "%")) %>%
   arrange(desc(n_c_y)) %>%
-  top_n(n = 30, wt = n_c_y) 
+  top_n(n = 20, wt = n_c_y) 
 
-stargazer(table_country_year_top30[c("year", "cow_statename", "n_c_y","rel.freq")],
+stargazer(table_country_year_top20[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Country-Years with Most Cables", 
+          title="Non-U.S. Country-Years with Most Cables", 
           digits=1, 
-          out="./data_analysis_output/top30_cable_n_country_year.txt",
+          out="./data_analysis_output/top20_cable_n_country_year.txt",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 
-stargazer(table_country_year_top30[c("year", "cow_statename", "n_c_y","rel.freq")],
+stargazer(table_country_year_top20[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Country-Years with Most Cables", 
+          title="Non-U.S. Country-Years with Most Cables", 
           digits=1, 
-          out="./data_analysis_output/top30_cable_n_country_year.html",
+          out="./data_analysis_output/top20_cable_n_country_year.html",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 ```
 
-##Country-years with fewest cables
+##Non-US country-years with fewest cables
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-table_country_year_bottom30<- 
-  cable_n_70s_country_year %>%
+table_country_year_bottom20<- 
+  cable_n_states_70s_year %>%
+  filter(cow_ccode!=2) %>%
   mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 0), "%")) %>%
   arrange(desc(n_c_y)) %>%
-  #filter(n_c_y<10) 
-  top_n(n = -30, wt = n_c_y) 
+  top_n(n = -20, wt = n_c_y) 
 
-stargazer(table_country_year_bottom30[c("year", "cow_statename", "n_c_y","rel.freq")],
+stargazer(table_country_year_bottom20[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Country-Years with Fewest Cables", 
+          title="Non-U.S. Country-Years with Fewest Cables", 
           digits=1, 
-          out="./data_analysis_output/bottom30_cable_n_country_year.txt",
+          out="./data_analysis_output/bottom20_cable_n_country_year.txt",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 
-stargazer(table_country_year_bottom30[c("year", "cow_statename", "n_c_y","rel.freq")],
+stargazer(table_country_year_bottom20[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Country-Years with Fewest Cables", 
+          title="Non-U.S. Country-Years with Fewest Cables", 
           digits=1, 
-          out="./data_analysis_output/bottom30_cable_n_country_year.html",
+          out="./data_analysis_output/bottom20_cable_n_country_year.html",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 ```
 
@@ -481,65 +516,67 @@ stargazer(table_country_year_bottom30[c("year", "cow_statename", "n_c_y","rel.fr
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-table_country_top30<- 
-  cable_n_70s_country_year %>%
+table_country_top20<- 
+  cable_n_states_70s %>%
+  filter(cow_ccode!=2) %>%
   group_by(cow_ccode, cow_stateabb, cow_statename) %>% 
-  summarise(n_c = sum(n_c_y)) %>%
+  summarise(n_c = sum(n_c)) %>%
   ungroup %>%
   mutate(total_n_c= sum(n_c), 
          rel.freq = paste0(round(100 * n_c/total_n_c, 0), "%")) %>%
   arrange(desc(n_c)) %>%
-  top_n(n = 30, wt = n_c) 
+  top_n(n = 20, wt = n_c) 
 
-stargazer(table_country_top30[c("cow_statename", "n_c","rel.freq")],
+stargazer(table_country_top20[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Countries Most Frequently Tagged in Cables", 
+          title="Non-U.S. Countries Most Frequently Tagged in Cables", 
           digits=1, 
-          out="./data_analysis_output/top30_cable_n_country.txt",
+          out="./data_analysis_output/top20_cable_n_country.txt",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 
-stargazer(table_country_top30[c("cow_statename", "n_c","rel.freq")],
+stargazer(table_country_top20[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Countries Most Frequently Tagged in Cables", 
+          title="Non-U.S. Countries Most Frequently Tagged in Cables", 
           digits=1, 
-          out="./data_analysis_output/top30_cable_n_country.html",
+          out="./data_analysis_output/top20_cable_n_country.html",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 ```
 
-##Countries least frequently tagged in cables
+##Non-U.S. countries least frequently tagged in cables
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-table_country_bottom30<- 
-  cable_n_70s_country_year %>%
+table_country_bottom20<- 
+  cable_n_states_70s %>%
+  filter(cow_ccode!=2) %>%
   group_by(cow_ccode, cow_stateabb, cow_statename) %>% 
   summarise(n_c = sum(n_c_y)) %>%
   ungroup %>%
   mutate(total_n_c= sum(n_c), 
          rel.freq = paste0(round(100 * n_c/total_n_c, 0), "%")) %>%
   arrange(desc(n_c)) %>%
-  top_n(n = -30, wt = n_c) 
+  top_n(n = -20, wt = n_c) 
 
-stargazer(table_country_bottom30[c("cow_statename", "n_c","rel.freq")],
+stargazer(table_country_bottom20[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Countries Least Frequently Tagged in Cables", 
+          title="Non-U.S. Countries Least Frequently Tagged in Cables", 
           digits=1, 
-          out="./data_analysis_output/bottom30_cable_n_country.txt",
+          out="./data_analysis_output/bottom20_cable_n_country.txt",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 
-stargazer(table_country_bottom30[c("cow_statename", "n_c","rel.freq")],
+stargazer(table_country_bottom20[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Countries Least Frequently Tagged in Cables", 
+          title="Non-U.S. Countries Least Frequently Tagged in Cables", 
           digits=1, 
-          out="./data_analysis_output/bottom30_cable_n_country.html",
+          out="./data_analysis_output/bottom20_cable_n_country.html",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 ```
 

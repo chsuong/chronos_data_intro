@@ -1,0 +1,26 @@
+
+Non-U.S. Country-Years with Fewest Cables
+==============================================================
+Year    Tagged Country     Number of Cables Relative Frequency
+--------------------------------------------------------------
+1977       Mongolia               75                0%        
+1979       Maldives               75                0%        
+1978   Equatorial Guinea          72                0%        
+1979        Bhutan                68                0%        
+1977 Sao Tome and Principe        67                0%        
+1975       Mongolia               66                0%        
+1974        Bhutan                63                0%        
+1977   Equatorial Guinea          57                0%        
+1973        Albania               55                0%        
+1975       Maldives               55                0%        
+1978       Mongolia               50                0%        
+1979       Mongolia               48                0%        
+1973   Equatorial Guinea          45                0%        
+1973        Bhutan                35                0%        
+1975        Bhutan                31                0%        
+1977        Bhutan                31                0%        
+1976        Bhutan                28                0%        
+1973       Maldives               27                0%        
+1973         Congo                23                0%        
+1978        Bhutan                21                0%        
+--------------------------------------------------------------
