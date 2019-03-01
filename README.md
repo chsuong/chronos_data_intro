@@ -2,6 +2,8 @@ I have looked at some metadata for documents in the database 'declassification_c
 
 I created a html/rmarkdown file to explore the databases and to make Word-compatible tables. I will migrate to Python for analyzing the text. 
 
+- The original proposal: https://docs.google.com/document/d/1xgIa9FoH3dLcBQmw7xI5gBJ1wh55Bg_Vdtayo8Lzq78/edit#
+
 - A summary/commentary of data introduction papers: https://docs.google.com/document/d/116FIdxxrGXxwO-AweaXaL6Kng_tmcYR8KOgpqBzBOOU/edit?usp=sharing
 
 - Outline/draft: https://docs.google.com/document/d/1Ve1iRiVqhL-jpKFY5x0dZGl_irYQpUeW_FmIMxlinK8/edit?usp=sharing
