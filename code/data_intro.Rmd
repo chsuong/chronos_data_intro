@@ -379,6 +379,9 @@ save(states_70s, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_stat
 #Note that the total ns for each dataset for differs a bit because: cable_n_states_70s and cable_n_states_70s_year look at only existing countries? or missing values?
 ```
 
+
+
+
 ##Examine cables tagged with certain countries as a test
 ```{r}
 #Check tag_id for certain countries
@@ -434,6 +437,7 @@ cable_egypt<-
   tally() 
 ```
 
+
 ##Summary statistics of cable traffic by country-year
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
@@ -465,6 +469,67 @@ stargazer(as.data.frame(cable_n_states_70s_year)[c("year", "cow_ccode", "n_c_y")
           digits=1, 
           out="./data_analysis_output/desc_cable_n_states_70s_year.html",
           covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+```
+##Histograms and density plots
+```{r}
+plot(density(cable_n_states_70s_year$n_c_y))
+plot(density(cable_n_states_70s$n_c))
+#The distribution for the count variables is zero-inflated. Convert the raw number of cables to a 0-1 index???  
+
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+options(scipen=10000000)
+png("./data_analysis_output/cable_n_states_year_hist.png")
+layout(matrix(c(1:2), 2, 1,
+ byrow = TRUE))
+hist(cable_n_all_states_year$n_c_y, # histogram
+ #col = "peachpuff", # column color
+ border = "black",
+ prob = TRUE, # show densities instead of frequencies
+ ylim = c(0, 0.0004),
+ xlab = "Number of Cables Tagged",
+ main = "All Country-Years")
+lines(density(cable_n_all_states_year$n_c_y), # density plot
+ lwd = 2, # thickness of line
+ col = "chocolate3")
+hist(cable_n_states_70s_year$n_c_y, # histogram
+ #col = "peachpuff", # column color
+ border = "black",
+ prob = TRUE, # show densities instead of frequencies
+ ylim = c(0, 0.0004),
+ xlab = "Number of Cables Tagged Per Year",
+ main = "Existing Country-Years")
+lines(density(cable_n_states_70s_year$n_c_y), # density plot
+ lwd = 2, # thickness of line
+ col = "chocolate3")
+dev.off()
+
+png("./data_analysis_output/cable_n_states_hist.png")
+layout(matrix(c(1:2), 2, 1,
+ byrow = TRUE))
+hist(cable_n_all_states$n_c, # histogram
+ #col = "peachpuff", # column color
+ border = "black",
+ prob = TRUE, # show densities instead of frequencies
+ xlim = c(0, 20000), 
+ ylim = c(0, 0.0004),
+ xlab = "Number of Cables",
+ main = "All Countries")
+lines(density(cable_n_all_states_year$n_c_y), # density plot
+ lwd = 2, # thickness of line
+ col = "chocolate3")
+hist(cable_n_states_70s$n_c, # histogram
+ #col = "peachpuff", # column color
+ border = "black",
+ prob = TRUE, # show densities instead of frequencies
+ xlim = c(0, 20000), 
+  ylim = c(0, 0.0004),
+ xlab = "Number of Cables",
+ main = "Existing Countries")
+lines(density(cable_n_states_70s_year$n_c_y), # density plot
+ lwd = 2, # thickness of line
+ col = "chocolate3")
+dev.off()
 ```
 
 ##Non-US country-years with most cables
