@@ -162,7 +162,7 @@ iso_3166<-
          "Official_name",
          "Common_name") 
 
-#Generate a dataframe for all (historic and existing) countries according to COW. Note that this includes the US.
+#Generate a dataframe for all (former and existing) countries according to COW. Note that this includes the US.
 all_states<-
   read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/states2016.csv") %>%
   dplyr::select("stateabb","ccode","statenme") %>%
@@ -174,7 +174,7 @@ all_states<-
          cow_statename=as.character(cow_statename)) %>%
   distinct() #There are duplicates. e.g. countries that existed, disappeared, and then re-appeared. 
 
-#Generate a dataframe for all (historic and existing) countries for years 1973-79. Note that this includes the US.
+#Generate a dataframe for all (former and existing) countries for years 1973-79. Note that this includes the US.
 all_states_year<-
   read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/states2016.csv") %>%
   dplyr::select("stateabb","ccode","statenme") %>%
@@ -440,14 +440,14 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 
 stargazer(as.data.frame(cable_n_all_states_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "text", 
-          title="Summary Statistics of Cable Traffic by Country-Year (Incl. Historic Countries)", 
+          title="Summary Statistics of Cable Traffic by Country-Year (Incl. Former Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_all_states_year.txt",
           covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
 
 stargazer(as.data.frame(cable_n_all_states_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "html", 
-          title="Summary Statistics of Cable Traffic by Country-Year (Incl. Historic Countries)", 
+          title="Summary Statistics of Cable Traffic by Country-Year (Incl. Former Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_all_states_year.html",
           covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
