@@ -1,5 +1,5 @@
 
-Summary Statistics of Cable Traffic by Country-Year (Incl. Historic Countries)
+Summary Statistics of Cable Traffic by Country-Year (Incl. Former Countries)
 ==============================================================================================
 Statistic                                 N    Mean   St. Dev.  Min  Pctl(25) Pctl(75)   Max  
 ----------------------------------------------------------------------------------------------
