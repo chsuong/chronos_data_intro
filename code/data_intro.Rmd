@@ -375,6 +375,8 @@ cable_n_states_70s<-
   arrange(desc(n_c))
 save(states_70s, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_states_70s.RData")
 #load("./data/cable_n_states_70s.RData")
+
+#Note that the total ns for each dataset for differs a bit because: cable_n_states_70s and cable_n_states_70s_year look at only existing countries? or missing values? 
 ```
 
 ##Examine cables tagged with certain countries as a test
@@ -601,11 +603,10 @@ stargazer(table_state_bottom20[c("cow_statename", "n_c","rel.freq")],
 
 ##Import and load the Moyer data for U.S. diplomatic representation
 ```{r}
-
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 us_dip_rep_moyer<-
-  read_csv("./external_data/moyer_et_al_2016/Pardee Center Diplomatic Representation_COW 20190208.csv", locale = locale(encoding = "UTF-8")) %>% #COW-compatible version
+  read_csv("./external_data/moyer_et_al_2016/Pardee Center Diplomatic Representation_COW 20190208.csv") %>% #COW-compatible version
 #  read_excel("../external_data/moyeretal2016/Diplomatic_Exchange_V3.16.16.xlsx") %>% #Non-compatible, public version
   mutate(Year=as.numeric(Year)) %>%
   rename(year = Year) %>%
