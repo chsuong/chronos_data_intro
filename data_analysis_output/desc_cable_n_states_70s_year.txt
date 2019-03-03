@@ -1,9 +1,9 @@
 
-Summary Statistics of Cable Traffic by Country-Year (Only Existing Countries)
+Summary Statistics of Tag Traffic by Country-Year (Only Existing Countries)
 ==============================================================================================
 Statistic                                 N    Mean   St. Dev.  Min  Pctl(25) Pctl(75)   Max  
 ----------------------------------------------------------------------------------------------
 Year                                    1,047 1,976.1   2.0    1,973  1,974    1,978    1,979 
 COW Codes of Countries Tagged in Cables 1,047  457.3   249.3     2     235      663      990  
-Cable Traffic for Each Country-Year     1,047 3,201.9 9,047.6   21     682    3,457.5  138,438
+Tag Traffic for Each Country-Year       1,047 3,201.9 9,047.6   21     682    3,457.5  138,438
 ----------------------------------------------------------------------------------------------

@@ -261,7 +261,7 @@ country_code_tag<-
   dplyr::select(-iso3n) 
 ```
 
-#Cable traffic by country
+#Tag traffic by country
 
 ##Download, save, or load the tables for tags and docs (doc_id and date) in the working directory and count the number of cables tagged for each country
 ```{r results='hide'}
@@ -320,7 +320,7 @@ save(cable_n_country_day, file = "/Users/clarahsuong/chronos_data_intro/data/cab
 #country_doc %>% filter(country_id==704)
 #It is meaningful to distinguish cables related to South Vietnam from those about (North) Vietnam. Thus, do not use this table.
 
-#Yearly cable traffic by state-year, including 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
+#Yearly tag traffic by state-year, including 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
 cable_n_all_states_year<-
   country_tag_doc2 %>%
   group_by(year, cow_ccode, cow_statename, cow_stateabb) %>%
@@ -334,7 +334,7 @@ cable_n_all_states_year<-
 save(cable_n_all_states_year, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_all_states_year.RData")
 #load("./data/cable_n_all_states_year.RData")
 
-#Cable traffic by state, including 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
+#Tag traffic by state, including 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
 cable_n_all_states<-
   country_tag_doc2 %>%
   group_by(cow_ccode, cow_statename, cow_stateabb) %>%
@@ -348,7 +348,7 @@ cable_n_all_states<-
 save(cable_n_all_states, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_all_states.RData")
 #load("./data/cable_n_all_states.RData")
 
-#Yearly cable traffic by state-year, excluding 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
+#Yearly tag traffic by state-year, excluding 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
 cable_n_states_70s_year<-
   country_tag_doc2 %>%
   group_by(year, cow_ccode, cow_statename, cow_stateabb) %>%
@@ -362,7 +362,7 @@ cable_n_states_70s_year<-
 save(cable_n_states_70s_year, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_states_70s_year.RData")
 #load("./data/cable_n_states_70s_year.RData")
 
-#Cable traffic by state, excluding 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
+#Tag traffic by state, excluding 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
 cable_n_states_70s<-
   country_tag_doc2 %>%
   group_by(cow_ccode, cow_statename, cow_stateabb) %>%
@@ -438,96 +438,96 @@ cable_egypt<-
 ```
 
 
-##Summary statistics of cable traffic by country-year and by country
+##Summary statistics of tag traffic by country-year and by country
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 #Country-year level
 stargazer(as.data.frame(cable_n_all_states_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "text", 
-          title="Summary Statistics of Cable Traffic by Country-Year (Incl. Former Countries)", 
+          title="Summary Statistics of Tag Traffic by Country-Year (Incl. Former Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_all_states_year.txt",
-          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country-Year"))
 
 stargazer(as.data.frame(cable_n_all_states_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "html", 
-          title="Summary Statistics of Cable Traffic by Country-Year (Incl. Former Countries)", 
+          title="Summary Statistics of Tag Traffic by Country-Year (Incl. Former Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_all_states_year.html",
-          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country-Year"))
 
 stargazer(as.data.frame(cable_n_states_70s_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "text", 
-          title="Summary Statistics of Cable Traffic by Country-Year (Only Existing Countries)", 
+          title="Summary Statistics of Tag Traffic by Country-Year (Only Existing Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_states_70s_year.txt",
-          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country-Year"))
 
 stargazer(as.data.frame(cable_n_states_70s_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "html", 
-          title="Summary Statistics of Cable Traffic by Country-Year (Only Existing Countries)", 
+          title="Summary Statistics of Tag Traffic by Country-Year (Only Existing Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_states_70s_year.html",
-          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country-Year"))
 
 stargazer(as.data.frame(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,])[c("year", "cow_ccode", "n_c_y")], 
           type = "text", 
-          title="Summary Statistics of Cable Traffic by Country-Year (Only Existing Non-U.S. Countries)", 
+          title="Summary Statistics of Tag Traffic by Country-Year (Only Existing Non-U.S. Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_nonus_states_70s_year.txt",
-          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country-Year"))
 
 stargazer(as.data.frame(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,])[c("year", "cow_ccode", "n_c_y")], 
           type = "html", 
-          title="Summary Statistics of Cable Traffic by Country-Year (Only Existing Non-U.S. Countries)", 
+          title="Summary Statistics of Tag Traffic by Country-Year (Only Existing Non-U.S. Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_nonus_states_70s_year.html",
-          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country-Year"))
 
 
 #Country level
 stargazer(as.data.frame(cable_n_all_states)[c("cow_ccode", "n_c")], 
           type = "text", 
-          title="Summary Statistics of Cable Traffic by Country (Incl. Former Countries)", 
+          title="Summary Statistics of Tag Traffic by Country (Incl. Former Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_all_states.txt",
-          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country"))
 
 stargazer(as.data.frame(cable_n_all_states)[c("cow_ccode", "n_c")], 
           type = "html", 
-          title="Summary Statistics of Cable Traffic by Country (Incl. Former Countries)", 
+          title="Summary Statistics of Tag Traffic by Country (Incl. Former Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_all_states.html",
-          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country"))
 
 stargazer(as.data.frame(cable_n_states_70s)[c("cow_ccode", "n_c")], 
           type = "text", 
-          title="Summary Statistics of Cable Traffic by Country (Incl. Only Existing Countries)", 
+          title="Summary Statistics of Tag Traffic by Country (Incl. Only Existing Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_states_70s.txt",
-          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country"))
 
 stargazer(as.data.frame(cable_n_states_70s)[c("cow_ccode", "n_c")],
           type = "html", 
-          title="Summary Statistics of Cable Traffic by Country (Incl. Only Existing Countries)",
+          title="Summary Statistics of Tag Traffic by Country (Incl. Only Existing Countries)",
           digits=1, 
           out="./data_analysis_output/desc_cable_n_states_70s.html",
-          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country"))
 
 stargazer(as.data.frame(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,])[c("cow_ccode", "n_c")], 
           type = "text", 
-          title="Summary Statistics of Cable Traffic by Country (Incl. Only Existing Non-U.S. Countries)", 
+          title="Summary Statistics of Tag Traffic by Country (Incl. Only Existing Non-U.S. Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_nonus_states_70s.txt",
-          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country"))
 
 stargazer(as.data.frame(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,])[c("cow_ccode", "n_c")],
           type = "html", 
-          title="Summary Statistics of Cable Traffic by Country (Incl. Only Existing Non-U.S. Countries)",
+          title="Summary Statistics of Tag Traffic by Country (Incl. Only Existing Non-U.S. Countries)",
           digits=1, 
           out="./data_analysis_output/desc_cable_n_nonus_states_70s.html",
-          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country"))
 
 ```
 ##Histograms and density plots
@@ -759,9 +759,10 @@ us_dip_rep_moyer<-
   mutate(Year=as.numeric(Year)) %>%
   rename(year = Year) %>%
   filter(Country=="United States of America") %>%
-  mutate(cow_ccode=countrycode(Destination, 'country.name', 'cown')) %>% #us_dip_rep[is.na(us_dip_rep$cow_ccode),] COW country code for German Federal Republic is wrong and should be 260, not 255. This is an error in the R package countrycode.
+  mutate(cow_ccode=countrycode(Destination, 'country.name', 'cown')) %>% 
+  #COW country code for German Federal Republic is wrong and should be 260, not 255. This is an error in the R package countrycode. Note that the dataset is also missing observation for U.S. embassies in South Vietnam and the Bahamas. 
   mutate(cow_ccode= replace(cow_ccode, Destination=="German Federal Republic", 260)) %>%
-  right_join(states_70s, by=c("year", "cow_ccode")) %>% #Note the missing values for Destination but not cow_ccode.
+  #right_join(states_70s, by=c("year", "cow_ccode")) %>% #Note the missing values for Destination but not cow_ccode.
   arrange(cow_ccode, year) %>%
   #mutate(date = ymd(paste0(year, "-", 06, "-", 01))) %>%
   mutate(dip_rep_m=ifelse(is.na(`Embassy Old`),0, 1)) %>% #Created a variable for US representation. The dataset by Arias and Smith 2018 seems more accurate. This dataset misses the case of U.S. embassy in the Bahamas in 1973-75 wherease the latter includes it.
@@ -805,7 +806,8 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 
 us_dip_rep_app <-  
   read_csv("./external_data/arias_smith_2018/ambassadors.csv", guess_max = 100000, locale = locale(encoding = "UTF-8")) %>%
-  dplyr::select(year, ccode, country_ambassador, ambassador, position, politicalappointee,performanceMU,good, bad) %>%
+  dplyr::select(year, ccode, country_ambassador, ambassador, position, politicalappointee,
+                performanceMU,good, bad) %>%
   rename(cow_ccode=ccode, ambassador_name=ambassador) %>%
   mutate(dip_rep_a=ifelse(is.na(country_ambassador),0, 1)) %>% #Created a variable for inferred US representation. Check this variable against the dataset by Moyer 2016. There may be a discrepancy due to bureaucratic delays and so on. For instance, there may be a diplomatic relationship but there is a delay in confirming him/her and the DCM serves as CM instead. 
   mutate(ambassador=ifelse(position=="Ambassador Extraordinary and Plenipotentiary",1, 0)) %>%
@@ -1409,7 +1411,7 @@ stargazer(glm.nb_irep1, glm.nb_app1,
           out="../data_analysis_output/cable_n_irep_app.txt")
 ```
 
-#Compare the yearly cable traffic with the country-year data on diplomatic visits
+#Compare the yearly tag traffic with the country-year data on diplomatic visits
 ```{r, results="hide",warning=FALSE,message=FALSE}
 cable_n_vis_country_y<-
   cable_n_country_y %>%
