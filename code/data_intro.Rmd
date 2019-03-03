@@ -30,7 +30,8 @@ library(RMySQL) #For connecting to the databse
 library(htmlTable) #For creating Word-compatible tables
 library(Hmisc)
 library(expss) #For creating Word-compatible tables
-library(sjlabelled) #For creating Word-compatible tables
+library(sjlabelled) #For creating Word-compatible tables from pglm models
+
 library(lubridate) #For temporal variables
 library(foreign)
 library(ggplot2)
@@ -48,6 +49,8 @@ library(lmtest)
 library(sandwich)
 library(plm) #For linear regression models for (unbalanced) panel data
 library(rowr) #For cbind with fill
+library(sjPlot) #For creating Word-compatible tables from pglm models
+library(sjmisc) #For creating Word-compatible tables from pglm models
 
 #setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #If necessary, set as the working directory a location where you can save large data files with file size over 100 mb (github limitation).
 #Create a folder named "external_data" in the working directory
@@ -164,7 +167,7 @@ iso_3166<-
 
 #Generate a dataframe for all (former and existing) countries according to COW. Note that this includes the US.
 all_states<-
-  read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/states2016.csv") %>%
+  read_csv("./external_data/cow/states2016.csv") %>%
   dplyr::select("stateabb","ccode","statenme") %>%
   #filter(!ccode==2) %>% #Leave out the US
   rename(cow_ccode=ccode,
@@ -176,7 +179,7 @@ all_states<-
 
 #Generate a dataframe for all (former and existing) countries for years 1973-79. Note that this includes the US.
 all_states_year<-
-  read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/states2016.csv") %>%
+  read_csv("./external_data/cow/states2016.csv") %>%
   dplyr::select("stateabb","ccode","statenme") %>%
   #filter(!ccode==2) %>% #Leave out the US
   rename(cow_ccode=ccode,
@@ -193,7 +196,7 @@ all_states_year<-
 
 #Generate a dataframe for countries existing during the period of 1973-79. Note that the universe of countries differs by year due to the difference in countries' birth years. Note that this also includes the US.
 states_70s_year<-
-  read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/system2016.csv") %>%
+  read_csv("./external_data/cow/system2016.csv") %>%
   dplyr::select("stateabb","ccode","year") %>%
   filter(year>1972 & year<1980) %>%
   rename(cow_ccode=ccode, 
@@ -201,7 +204,7 @@ states_70s_year<-
   left_join(all_states, by=c("cow_ccode","cow_stateabb")) #Include COW state names
 
 states_70s<-
-  read_csv("/Users/clarahsuong/chronos_data_intro/external_data/cow/system2016.csv") %>%
+  read_csv("./external_data/cow/system2016.csv") %>%
   dplyr::select("stateabb","ccode","year") %>%
   filter(year>1972 & year<1980) %>%
   dplyr::select(-year) %>%
@@ -309,7 +312,7 @@ cable_n_country_day<-
                    "country_name", 
                    "date")) %>%
   tally() 
-save(cable_n_country_day, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_country_day.RData")
+save(cable_n_country_day, file = "./data/cable_n_country_day.RData")
 #load("./data/cable_n_country_day.RData") #Note that this includes neither all dates nor all countries on the COW list.
 
 #The table country_doc attempts to add West Germany and South Vietnam based on regex matching in body.
@@ -331,7 +334,7 @@ cable_n_all_states_year<-
   ungroup %>%
   mutate(total_n = sum(n_c_y)) %>%
   arrange(year, cow_ccode)
-save(cable_n_all_states_year, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_all_states_year.RData")
+save(cable_n_all_states_year, file = "./data/cable_n_all_states_year.RData")
 #load("./data/cable_n_all_states_year.RData")
 
 #Tag traffic by state, including 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
@@ -345,7 +348,7 @@ cable_n_all_states<-
   ungroup %>%
   mutate(total_n = sum(n_c)) %>%
   arrange(desc(n_c))
-save(cable_n_all_states, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_all_states.RData")
+save(cable_n_all_states, file = "./data/cable_n_all_states.RData")
 #load("./data/cable_n_all_states.RData")
 
 #Yearly tag traffic by state-year, excluding 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
@@ -359,7 +362,7 @@ cable_n_states_70s_year<-
   ungroup %>%
   mutate(total_n = sum(n_c_y)) %>%
   arrange(year, cow_ccode)
-save(cable_n_states_70s_year, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_states_70s_year.RData")
+save(cable_n_states_70s_year, file = "./data/cable_n_states_70s_year.RData")
 #load("./data/cable_n_states_70s_year.RData")
 
 #Tag traffic by state, excluding 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
@@ -373,7 +376,7 @@ cable_n_states_70s<-
   ungroup %>%
   mutate(total_n = sum(n_c)) %>%
   arrange(desc(n_c))
-save(states_70s, file = "/Users/clarahsuong/chronos_data_intro/data/cable_n_states_70s.RData")
+save(states_70s, file = "./data/cable_n_states_70s.RData")
 #load("./data/cable_n_states_70s.RData")
 
 #Note that the total ns for each dataset for differs a bit because: cable_n_states_70s and cable_n_states_70s_year look at only existing countries? or missing values?
@@ -532,11 +535,11 @@ stargazer(as.data.frame(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,])[c(
 ```
 ##Histograms and density plots
 ```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
 plot(density(cable_n_states_70s_year$n_c_y))
 plot(density(cable_n_states_70s$n_c))
 #The distribution for the count variables is zero-inflated. Convert the raw number of cables to a 0-1 index???  
-
-setwd("/Users/clarahsuong/chronos_data_intro")
 
 #Country-year level
 options(scipen=10000000)
@@ -587,7 +590,7 @@ hist(cable_n_all_states$n_c, # histogram
  ylim = c(0, 0.0004),
  xlab = "Number of Cables",
  main = "All Countries")
-lines(density(cable_n_all_states_year$n_c_y), # density plot
+lines(density(cable_n_all_states$n_c), # density plot
  lwd = 2, # thickness of line
  col = "chocolate3")
 hist(cable_n_states_70s$n_c, # histogram
@@ -598,7 +601,7 @@ hist(cable_n_states_70s$n_c, # histogram
   ylim = c(0, 0.0004),
  xlab = "Number of Cables",
  main = "Existing Countries")
-lines(density(cable_n_states_70s_year$n_c_y), # density plot
+lines(density(cable_n_states_70s$n_c), # density plot
  lwd = 2, # thickness of line
  col = "chocolate3")
 hist(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c, # histogram
@@ -715,11 +718,7 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 table_state_bottom20<- 
   cable_n_states_70s %>%
   filter(cow_ccode!=2) %>%
-#  group_by(cow_ccode, cow_stateabb, cow_statename) %>% 
-#  summarise(n_c = sum(n_c_y)) %>%
-#  ungroup %>%
-  mutate(#total_n_c= sum(n_c), 
-         rel.freq = paste0(round(100 * n_c/total_n, 0), "%")) %>%
+  mutate(rel.freq = paste0(round(100 * n_c/total_n, 0), "%")) %>%
   arrange(desc(n_c)) %>%
   top_n(n = -20, wt = n_c) 
 
@@ -762,7 +761,7 @@ us_dip_rep_moyer<-
   mutate(cow_ccode=countrycode(Destination, 'country.name', 'cown')) %>% 
   #COW country code for German Federal Republic is wrong and should be 260, not 255. This is an error in the R package countrycode. Note that the dataset is also missing observation for U.S. embassies in South Vietnam and the Bahamas. 
   mutate(cow_ccode= replace(cow_ccode, Destination=="German Federal Republic", 260)) %>%
-  #right_join(states_70s, by=c("year", "cow_ccode")) %>% #Note the missing values for Destination but not cow_ccode.
+  right_join(states_70s_year, by=c("year", "cow_ccode")) %>% #Note the missing values for Destination but not cow_ccode. This also includes the U.S.
   arrange(cow_ccode, year) %>%
   #mutate(date = ymd(paste0(year, "-", 06, "-", 01))) %>%
   mutate(dip_rep_m=ifelse(is.na(`Embassy Old`),0, 1)) %>% #Created a variable for US representation. The dataset by Arias and Smith 2018 seems more accurate. This dataset misses the case of U.S. embassy in the Bahamas in 1973-75 wherease the latter includes it.
@@ -818,7 +817,7 @@ us_dip_rep_app <-
             performanceMU_year=mean(performanceMU, na.rm = TRUE),
             ambassador_year=mean(ambassador, na.rm = TRUE)
             ) %>%
-#  right_join(states_70s, by=c("cow_ccode", "year")) %>%  
+  right_join(states_70s_year, by=c("cow_ccode", "year")) %>%  
   mutate(dip_rep_a=replace(dip_rep_a, is.na(dip_rep_a), 0)) 
 
 ```
@@ -836,8 +835,8 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 us_dip_vis<-
   read_csv("./external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
   dplyr::select(cowid, year, bi_PRE, bi_SOS) %>%#, mil_ratio, USmilaid, allies, USdefense, USdefense_EUR, UStrade, energypc, USalign, UNpart, mpower, term2, NIX, FOR, CAR, demo, bi_L1_PRE, EUR, AFR, MEA, SCA, EAP, bi_L14_SOS, bi_L14_PRE, bi_L58_SOS, bi_L58_PRE) %>%
-  rename(cow_ccode=cowid) #%>%
-  #right_join(states_70s, by=c("cow_ccode", "year"))  
+  rename(cow_ccode=cowid) %>%
+  right_join(states_70s_year, by=c("cow_ccode", "year"))  
   #mutate(un_member= ifelse(!is.na(UNpart),1, NA)) #Check whether newly admitted states participate in UN voting only the year after
 
 #a<-us_dip_vis[us_dip_vis$UNpart==0,]
@@ -933,7 +932,7 @@ us_dip_evt<-
   filter(!is.na(cow_ccode))  %>%
   group_by(.dots=c("year","cow_ccode")) %>%
   tally() %>%
-  #right_join(states_70s, by=c("cow_ccode", "year")) %>%
+  right_join(states_70s_year, by=c("cow_ccode", "year")) %>%
   rename(evt_n_c_y=n) %>%
   mutate(evt_n_c_y= replace(evt_n_c_y, is.na(evt_n_c_y), 0))
 ```
@@ -958,12 +957,14 @@ icb<-
 us_dip_c_y<-
   cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,] %>%
   left_join(us_dip_rep_moyer, by=c("cow_ccode", "year")) %>%
-  left_join(us_dip_rep_app, by=c("year", "cow_ccode")) %>%
-  left_join(us_dip_vis, by=c("year", "cow_ccode")) %>%
-  left_join(us_dip_evt, by=c("year", "cow_ccode")) %>%
+  left_join(us_dip_rep_app, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
+  left_join(us_dip_vis, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
+  left_join(us_dip_evt, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
   mutate(rep_diff=ifelse(dip_rep_a!=dip_rep_m,1, 0)) %>%
   group_by(cow_ccode) %>%
-  mutate(lag.n_c_y = dplyr::lag(n_c_y, n = 1, default = NA))
+  mutate(lag.n_c_y = dplyr::lag(n_c_y, n = 1, default = NA)) %>%
+  ungroup()
+
 
 #How is dip_rep_m different from dip_rep_a?
 #table(us_dip_c_y$rep_diff)
@@ -979,7 +980,7 @@ ggplot(us.cable_n.rep_m.vis.evt,
 
 ##Correlation plots
 ```{r}
-DF<-us_dip_c_y[c("n_c_y","dip_focus",#"dip_rep_m",
+DF<-us_dip_c_y[c("n_c_y","dip_focus","dip_rep_m",
                                      #"dip_rep_a",
                                      "nationrank", "politicalappointee_year","performanceMU_year","ambassador_year",
                                      "bi_PRE","bi_SOS","evt_n_c_y")]
@@ -1027,32 +1028,9 @@ coeftest(glm.nb_politicalappointee, vcov = sandwich)
 ```{r, results='asis', warning=FALSE,message=FALSE}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-fixed_rep_a <- pglm(n_c_y~
-                   #dip_rep_m#+
-                   #dip_focus+
-                   dip_rep_a#+
-                   #nationrank+ 
-                   #politicalappointee_year+
-                   #performanceMU_year+
-                   #ambassador_year+
-                   #bi_PRE+
-                   #bi_SOS+
-                   #evt_n_c_y+
-                   #lag.n_c_y
-                     ,
-               data=us_dip_c_y, 
-               effect = "twoways",
-               index=c("cow_ccode", "year"), 
-               family = negbin, 
-               model="within", 
-               method = "nr",
-               print.level = 0
-              )
-m_rep_a=summary(fixed_rep_a)
-m_rep_a
 
-coef_test(fixed_rep_a, vcov = "CR1", cluster = "individual", test = "naive-t")
 
+#coef_test(fixed_rep_a, vcov = "CR1", cluster = "individual", test = "naive-t")
 
 fixed_rep_m <- pglm(n_c_y~
                    dip_rep_m#+
@@ -1074,7 +1052,6 @@ fixed_rep_m <- pglm(n_c_y~
               )
 m_rep_m=summary(fixed_rep_m)
 m_rep_m
-```
 
 fixed_rep_m2 <- pglm(n_c_y~
                    #dip_rep_m+
@@ -1097,9 +1074,9 @@ fixed_rep_m2 <- pglm(n_c_y~
 m_rep_m2=summary(fixed_rep_m2)
 m_rep_m2
 
-fixed_rep_m2_app <- pglm(n_c_y~
-                   dip_rep_m+
-                   dip_focus+
+fixed_rep_app <- pglm(n_c_y~
+                   #dip_rep_m+
+                   #dip_focus+
                    #dip_rep_a+
                    politicalappointee_year#+
                    #performanceMU_year#+
@@ -1115,12 +1092,13 @@ fixed_rep_m2_app <- pglm(n_c_y~
                method = "nr",
                print.level = 0
               )
-m_rep_m2_app=summary(fixed_rep_m2_app)
-m_rep_m2_app
+m_rep_app=summary(fixed_rep_app)
+m_rep_app
 
-fixed_rep_m2_vis <- pglm(n_c_y~
-                   dip_rep_m+
-                   dip_focus+
+
+fixed_vis1 <- pglm(n_c_y~
+                   #dip_rep_m+
+                   #dip_focus+
                    #dip_rep_a+
                    #politicalappointee_year+
                    #performanceMU_year#+
@@ -1136,8 +1114,123 @@ fixed_rep_m2_vis <- pglm(n_c_y~
               method = "nr",
                print.level = 0
               )
-m_rep_m2_vis=summary(fixed_rep_m2_vis)
-m_rep_m2_vis
+m_vis1=summary(fixed_vis1)
+m_vis1
+
+fixed_evt <- pglm(n_c_y~
+                   #dip_rep_m+
+                   #dip_focus+
+                   #dip_rep_a+
+                   #politicalappointee_year+
+                   #performanceMU_year#+
+                   #bi_PRE#+
+                   #bi_SOS#+
+                   evt_n_c_y
+               ,
+               data=us_dip_c_y, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               effect = "twoways",
+               method = "nr",
+               print.level = 0)
+m_evt=summary(fixed_evt)
+m_evt
+```
+
+```{r}
+var = c('Intercept', 
+        "dip_rep_m",
+        "dip_focus", 
+        "bi_PRE", 
+        #"bi_SOS",
+        "evt_n_c_y")
+
+model=summary(fixed1.4)
+
+model_summary <- 
+  model$estimate %>% 
+  as.data.frame() %>% 
+  dplyr::mutate(term = var, 
+         Estimate = round(Estimate, 2), 
+         SE = round(`Std. error`, 2), 
+         p.value = stars.pval(`Pr(> t)`)) %>% 
+ select(term, Estimate, SE, p.value) %>%
+ set_caption("Table: Negative Binomial Regression of Country-Year's Number of Cables") %>%
+ htmlTable(ctable=c("solid", "double"),rnames = FALSE)
+
+#write_tableHTML(tableHTML(as.data.frame(model_summary)), file = #'negbin.cable_n_c_y.html')
+
+model_summary
+
+#xtable(model_summary)
+
+summary.pglm()
+
+tab_model(m_rep_m, m_rep_a,m_rep_m2, m_rep_app, m_vis1, m_evt,  
+        #labelDependentVariables=labdep,
+        #labelPredictors=lab,
+        file="pglm.table.html",
+        pvaluesAsNumbers=T,
+        separateConfColumn=T)
+```
+
+stargazer(fixed1.1,
+          fixed1.2,
+          fixed1.3,          
+          fixed1.4,
+          type="html",
+          dep.var.labels=c("Number of Cables Tagged"),
+          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
+          out="./data_analysis_output/negbin_cable_n_c_y.html")
+```
+
+```{r}
+#Unestimatable or unused pglm models
+fixed_rep_a <- pglm(n_c_y~
+                   #dip_rep_m#+
+                   #dip_focus+
+                   dip_rep_a#+
+                   #nationrank+ 
+                   #politicalappointee_year+
+                   #performanceMU_year+
+                   #ambassador_year+
+                   #bi_PRE+
+                   #bi_SOS+
+                   #evt_n_c_y+
+                   #lag.n_c_y
+                     ,
+               data=us_dip_c_y, 
+               #effect = "twoways",
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               method = "nr",
+               print.level = 0
+              )
+m_rep_a=summary(fixed_rep_a)
+m_rep_a
+
+fixed_vis2 <- pglm(n_c_y~
+                   #dip_rep_m+
+                   #dip_focus+
+                   #dip_rep_a+
+                   #politicalappointee_year+
+                   #performanceMU_year#+
+                   #bi_PRE#+
+                   bi_SOS#+
+                   #evt_n_c_y
+               ,
+               data=us_dip_c_y, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               effect = "twoways",
+              method = "nr",
+               print.level = 0
+              )
+m_vis2=summary(fixed_vis2)
+m_vis2
 
 fixed_rep_m2_evt <- pglm(n_c_y~
                    dip_rep_m+
@@ -1158,10 +1251,7 @@ fixed_rep_m2_evt <- pglm(n_c_y~
                print.level = 0)
 m_rep_m2_evt=summary(fixed_rep_m2_evt)
 m_rep_m2_evt
-```
 
-```{r}
-#Unestimated pglm models
 fixed_rep_m_app <- pglm(n_c_y~
                    dip_rep_m+
                    #dip_focus+
@@ -1200,6 +1290,26 @@ fixed_rep_m_evt <- pglm(n_c_y~
                print.level = 0)
 m_rep_m_evt=summary(fixed_rep_m_evt)
 m_rep_m_evt
+
+fixed_dip <- pglm(n_c_y~
+                   dip_rep_m+
+                   #dip_focus+
+                   #dip_rep_a+
+                   politicalappointee_year+
+                   #performanceMU_year#+
+                   #bi_PRE+
+                   #bi_SOS+
+                   evt_n_c_y
+               ,
+               data=us_dip_c_y, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+               model="within", 
+               effect = "twoways",
+               method = "nr",
+               print.level = 0)
+m_dip=summary(fixed_dip)
+m_dip
 
 fixed1.5 <- pglm(n_c_y~
                    #dip_rep_m+
@@ -1252,52 +1362,6 @@ fixed_rep_m_app_vis_evt <- pglm(n_c_y~
                )
 m_rep_m_app_vis_evt=summary(fixed_rep_m_app_vis_evt)
 m_rep_m_app_vis_evt
-```
-
-```{r}
-var = c('Intercept', 
-        "dip_rep_m",
-        "dip_focus", 
-        "bi_PRE", 
-        #"bi_SOS",
-        "evt_n_c_y")
-
-model=summary(fixed1.4)
-
-model_summary <- 
-  model$estimate %>% 
-  as.data.frame() %>% 
-  dplyr::mutate(term = var, 
-         Estimate = round(Estimate, 2), 
-         SE = round(`Std. error`, 2), 
-         p.value = stars.pval(`Pr(> t)`)) %>% 
- select(term, Estimate, SE, p.value) %>%
- set_caption("Table: Negative Binomial Regression of Country-Year's Number of Cables") %>%
- htmlTable(ctable=c("solid", "double"),rnames = FALSE)
-
-#write_tableHTML(tableHTML(as.data.frame(model_summary)), file = #'negbin.cable_n_c_y.html')
-
-model_summary
-
-#xtable(model_summary)
-
-tab_model(m1.1, m1.2,
-        #labelDependentVariables=labdep,
-        #labelPredictors=lab,
-        file="or_table4.html",
-        pvaluesAsNumbers=T,
-        separateConfColumn=T)
-```
-
-stargazer(fixed1.1,
-          fixed1.2,
-          fixed1.3,          
-          fixed1.4,
-          type="html",
-          dep.var.labels=c("Number of Cables Tagged"),
-          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
-          out="./data_analysis_output/negbin_cable_n_c_y.html")
-```
 
 
 fixed2 <- pglm(n_c_y~
@@ -1315,7 +1379,6 @@ fixed2 <- pglm(n_c_y~
               )
 #summary(fixed2)
 
-```
 
 # "pooling"
 pooling1 <- pglm(n_c_y~
@@ -1344,6 +1407,7 @@ pooling2 <- pglm(n_c_y~
                  index=c("cow_ccode", "year"), family = negbin, model="pooling"#, method = "nr"
               )
 summary(pooling2)
+```
 
 ```{r}
 #Negative binomial models without panel effect and with cluster SEs and lagged years
