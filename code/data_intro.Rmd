@@ -805,19 +805,20 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 #write.csv(read.dta("./external_data/arias_smith_2018/ambassadors.dta"),"../external_data/arias_smith_2018/ambassadors.csv")
 
 us_dip_rep_app <-  
-  read_csv("./external_data/arias_smith_2018/ambassadors.csv", guess_max = 100000, locale = locale(encoding = "UTF-8")) %>%
+  read_csv("./external_data/arias_smith_2018/ambassadors.csv", guess_max = 100000) %>%
   dplyr::select(year, ccode, country_ambassador, ambassador, position, politicalappointee,
-                performanceMU,good, bad) %>%
+                performanceMU,good, bad, nationrank) %>%
   rename(cow_ccode=ccode, ambassador_name=ambassador) %>%
   mutate(dip_rep_a=ifelse(is.na(country_ambassador),0, 1)) %>% #Created a variable for inferred US representation. Check this variable against the dataset by Moyer 2016. There may be a discrepancy due to bureaucratic delays and so on. For instance, there may be a diplomatic relationship but there is a delay in confirming him/her and the DCM serves as CM instead. 
   mutate(ambassador=ifelse(position=="Ambassador Extraordinary and Plenipotentiary",1, 0)) %>%
   group_by(year, cow_ccode) %>%
-  summarise(dip_rep_a=max(dip_rep_a),
+  summarise(dip_rep_a=max(dip_rep_a, na.rm = TRUE),
+            nationrank=mean(nationrank, na.rm = TRUE),
             politicalappointee_year=mean(politicalappointee, na.rm = TRUE),
             performanceMU_year=mean(performanceMU, na.rm = TRUE),
             ambassador_year=mean(ambassador, na.rm = TRUE)
             ) %>%
-  right_join(states_70s, by=c("cow_ccode", "year")) %>%  
+#  right_join(states_70s, by=c("cow_ccode", "year")) %>%  
   mutate(dip_rep_a=replace(dip_rep_a, is.na(dip_rep_a), 0)) 
 
 ```
@@ -833,10 +834,10 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 
 
 us_dip_vis<-
-  read_csv("./external_data/lebovic_saunders_2016/diplomatic_core.replication.csv", locale = locale(encoding = "UTF-8")) %>%
+  read_csv("./external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
   dplyr::select(cowid, year, bi_PRE, bi_SOS) %>%#, mil_ratio, USmilaid, allies, USdefense, USdefense_EUR, UStrade, energypc, USalign, UNpart, mpower, term2, NIX, FOR, CAR, demo, bi_L1_PRE, EUR, AFR, MEA, SCA, EAP, bi_L14_SOS, bi_L14_PRE, bi_L58_SOS, bi_L58_PRE) %>%
-  rename(cow_ccode=cowid) %>%
-  right_join(states_70s, by=c("cow_ccode", "year"))  
+  rename(cow_ccode=cowid) #%>%
+  #right_join(states_70s, by=c("cow_ccode", "year"))  
   #mutate(un_member= ifelse(!is.na(UNpart),1, NA)) #Check whether newly admitted states participate in UN voting only the year after
 
 #a<-us_dip_vis[us_dip_vis$UNpart==0,]
@@ -917,7 +918,7 @@ us_dip_evt[us_dip_evt$source %in% setdiff(us_dip_evt$source, iso_3166$Alpha_3),]
 #YUG: Transitional reservations for former Yugoslavia/Serbia and Montenegro (https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3 https://wits.worldbank.org/wits/wits/witshelp/content/codes/country_codes.htm)
 
 us_dip_evt<-
-  read_csv("./external_data/carter_2018/AmericanDiplomacyDataset.csv", locale = locale(encoding = "UTF-8")) %>%
+  read_csv("./external_data/carter_2018/AmericanDiplomacyDataset.csv") %>%
   #filter(1969<year & year<1981) %>%
   mutate(cow_ccode_source=countrycode(source, 'iso3c','cown'),
        cow_ccode_target=countrycode(target, 'iso3c','cown')) %>%
@@ -932,7 +933,7 @@ us_dip_evt<-
   filter(!is.na(cow_ccode))  %>%
   group_by(.dots=c("year","cow_ccode")) %>%
   tally() %>%
-  right_join(states_70s, by=c("cow_ccode", "year")) %>%
+  #right_join(states_70s, by=c("cow_ccode", "year")) %>%
   rename(evt_n_c_y=n) %>%
   mutate(evt_n_c_y= replace(evt_n_c_y, is.na(evt_n_c_y), 0))
 ```
@@ -955,17 +956,17 @@ icb<-
 #Compare the country-year data
 ```{r}
 us_dip_c_y<-
-  cable_n_70s_country_year %>%
+  cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,] %>%
   left_join(us_dip_rep_moyer, by=c("cow_ccode", "year")) %>%
-  left_join(us_dip_rep_app, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
-  left_join(us_dip_vis, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
-  left_join(us_dip_evt, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
+  left_join(us_dip_rep_app, by=c("year", "cow_ccode")) %>%
+  left_join(us_dip_vis, by=c("year", "cow_ccode")) %>%
+  left_join(us_dip_evt, by=c("year", "cow_ccode")) %>%
   mutate(rep_diff=ifelse(dip_rep_a!=dip_rep_m,1, 0)) %>%
   group_by(cow_ccode) %>%
   mutate(lag.n_c_y = dplyr::lag(n_c_y, n = 1, default = NA))
 
 #How is dip_rep_m different from dip_rep_a?
-table(us_dip_c_y$rep_diff)
+#table(us_dip_c_y$rep_diff)
 ```  
 
 ```{r echo=FALSE}
@@ -978,9 +979,9 @@ ggplot(us.cable_n.rep_m.vis.evt,
 
 ##Correlation plots
 ```{r}
-DF<-us_dip_c_y[c("n_c_y","dip_focus","dip_rep_m",
-                                     "dip_rep_a",
-                                     "politicalappointee_year","performanceMU_year","ambassador_year",
+DF<-us_dip_c_y[c("n_c_y","dip_focus",#"dip_rep_m",
+                                     #"dip_rep_a",
+                                     "nationrank", "politicalappointee_year","performanceMU_year","ambassador_year",
                                      "bi_PRE","bi_SOS","evt_n_c_y")]
 M<-cor(DF, use = "complete.obs")
 M
@@ -1030,6 +1031,7 @@ fixed_rep_a <- pglm(n_c_y~
                    #dip_rep_m#+
                    #dip_focus+
                    dip_rep_a#+
+                   #nationrank+ 
                    #politicalappointee_year+
                    #performanceMU_year+
                    #ambassador_year+
@@ -1039,7 +1041,7 @@ fixed_rep_a <- pglm(n_c_y~
                    #lag.n_c_y
                      ,
                data=us_dip_c_y, 
-               #effect = "twoways",
+               effect = "twoways",
                index=c("cow_ccode", "year"), 
                family = negbin, 
                model="within", 
@@ -1050,7 +1052,7 @@ m_rep_a=summary(fixed_rep_a)
 m_rep_a
 
 coef_test(fixed_rep_a, vcov = "CR1", cluster = "individual", test = "naive-t")
-```
+
 
 fixed_rep_m <- pglm(n_c_y~
                    dip_rep_m#+
@@ -1072,6 +1074,7 @@ fixed_rep_m <- pglm(n_c_y~
               )
 m_rep_m=summary(fixed_rep_m)
 m_rep_m
+```
 
 fixed_rep_m2 <- pglm(n_c_y~
                    #dip_rep_m+
