@@ -438,10 +438,11 @@ cable_egypt<-
 ```
 
 
-##Summary statistics of cable traffic by country-year
+##Summary statistics of cable traffic by country-year and by country
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
+#Country-year level
 stargazer(as.data.frame(cable_n_all_states_year)[c("year", "cow_ccode", "n_c_y")], 
           type = "text", 
           title="Summary Statistics of Cable Traffic by Country-Year (Incl. Former Countries)", 
@@ -469,6 +470,65 @@ stargazer(as.data.frame(cable_n_states_70s_year)[c("year", "cow_ccode", "n_c_y")
           digits=1, 
           out="./data_analysis_output/desc_cable_n_states_70s_year.html",
           covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+
+stargazer(as.data.frame(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,])[c("year", "cow_ccode", "n_c_y")], 
+          type = "text", 
+          title="Summary Statistics of Cable Traffic by Country-Year (Only Existing Non-U.S. Countries)", 
+          digits=1, 
+          out="./data_analysis_output/desc_cable_n_nonus_states_70s_year.txt",
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+
+stargazer(as.data.frame(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,])[c("year", "cow_ccode", "n_c_y")], 
+          type = "html", 
+          title="Summary Statistics of Cable Traffic by Country-Year (Only Existing Non-U.S. Countries)", 
+          digits=1, 
+          out="./data_analysis_output/desc_cable_n_nonus_states_70s_year.html",
+          covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country-Year"))
+
+
+#Country level
+stargazer(as.data.frame(cable_n_all_states)[c("cow_ccode", "n_c")], 
+          type = "text", 
+          title="Summary Statistics of Cable Traffic by Country (Incl. Former Countries)", 
+          digits=1, 
+          out="./data_analysis_output/desc_cable_n_all_states.txt",
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+
+stargazer(as.data.frame(cable_n_all_states)[c("cow_ccode", "n_c")], 
+          type = "html", 
+          title="Summary Statistics of Cable Traffic by Country (Incl. Former Countries)", 
+          digits=1, 
+          out="./data_analysis_output/desc_cable_n_all_states.html",
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+
+stargazer(as.data.frame(cable_n_states_70s)[c("cow_ccode", "n_c")], 
+          type = "text", 
+          title="Summary Statistics of Cable Traffic by Country (Incl. Only Existing Countries)", 
+          digits=1, 
+          out="./data_analysis_output/desc_cable_n_states_70s.txt",
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+
+stargazer(as.data.frame(cable_n_states_70s)[c("cow_ccode", "n_c")],
+          type = "html", 
+          title="Summary Statistics of Cable Traffic by Country (Incl. Only Existing Countries)",
+          digits=1, 
+          out="./data_analysis_output/desc_cable_n_states_70s.html",
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+
+stargazer(as.data.frame(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,])[c("cow_ccode", "n_c")], 
+          type = "text", 
+          title="Summary Statistics of Cable Traffic by Country (Incl. Only Existing Non-U.S. Countries)", 
+          digits=1, 
+          out="./data_analysis_output/desc_cable_n_nonus_states_70s.txt",
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+
+stargazer(as.data.frame(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,])[c("cow_ccode", "n_c")],
+          type = "html", 
+          title="Summary Statistics of Cable Traffic by Country (Incl. Only Existing Non-U.S. Countries)",
+          digits=1, 
+          out="./data_analysis_output/desc_cable_n_nonus_states_70s.html",
+          covariate.labels=c("COW Codes of Countries Tagged in Cables", "Cable Traffic for Each Country"))
+
 ```
 ##Histograms and density plots
 ```{r}
@@ -478,9 +538,10 @@ plot(density(cable_n_states_70s$n_c))
 
 setwd("/Users/clarahsuong/chronos_data_intro")
 
+#Country-year level
 options(scipen=10000000)
 png("./data_analysis_output/cable_n_states_year_hist.png")
-layout(matrix(c(1:2), 2, 1,
+layout(matrix(c(1:3), 3, 1,
  byrow = TRUE))
 hist(cable_n_all_states_year$n_c_y, # histogram
  #col = "peachpuff", # column color
@@ -497,21 +558,32 @@ hist(cable_n_states_70s_year$n_c_y, # histogram
  border = "black",
  prob = TRUE, # show densities instead of frequencies
  ylim = c(0, 0.0004),
- xlab = "Number of Cables Tagged Per Year",
+ xlab = "Number of Cables Tagged",
  main = "Existing Country-Years")
 lines(density(cable_n_states_70s_year$n_c_y), # density plot
  lwd = 2, # thickness of line
  col = "chocolate3")
+hist(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,]$n_c_y, # histogram
+ #col = "peachpuff", # column color
+ border = "black",
+ prob = TRUE, # show densities instead of frequencies
+ ylim = c(0, 0.0004),
+ xlab = "Number of Cables Tagged",
+ main = "Existing Non-U.S. Country-Years")
+lines(density(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,]$n_c_y), # density plot
+ lwd = 2, # thickness of line
+ col = "chocolate3")
 dev.off()
 
+#Country level
 png("./data_analysis_output/cable_n_states_hist.png")
-layout(matrix(c(1:2), 2, 1,
+layout(matrix(c(1:3), 3, 1,
  byrow = TRUE))
 hist(cable_n_all_states$n_c, # histogram
  #col = "peachpuff", # column color
  border = "black",
  prob = TRUE, # show densities instead of frequencies
- xlim = c(0, 20000), 
+ #xlim = c(0, 20000), 
  ylim = c(0, 0.0004),
  xlab = "Number of Cables",
  main = "All Countries")
@@ -522,11 +594,22 @@ hist(cable_n_states_70s$n_c, # histogram
  #col = "peachpuff", # column color
  border = "black",
  prob = TRUE, # show densities instead of frequencies
- xlim = c(0, 20000), 
+ #xlim = c(0, 20000), 
   ylim = c(0, 0.0004),
  xlab = "Number of Cables",
  main = "Existing Countries")
 lines(density(cable_n_states_70s_year$n_c_y), # density plot
+ lwd = 2, # thickness of line
+ col = "chocolate3")
+hist(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c, # histogram
+ #col = "peachpuff", # column color
+ border = "black",
+ prob = TRUE, # show densities instead of frequencies
+ #xlim = c(0, 20000), 
+  ylim = c(0, 0.0004),
+ xlab = "Number of Cables",
+ main = "Existing Non-U.S. Countries")
+lines(density(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c), # density plot
  lwd = 2, # thickness of line
  col = "chocolate3")
 dev.off()
