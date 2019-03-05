@@ -6,7 +6,9 @@ I created a html/rmarkdown file to explore the databases and to make Word-compat
 
 - A summary/commentary of data introduction papers: https://docs.google.com/document/d/116FIdxxrGXxwO-AweaXaL6Kng_tmcYR8KOgpqBzBOOU/edit?usp=sharing
 
-- Outline/draft: https://docs.google.com/document/d/1Ve1iRiVqhL-jpKFY5x0dZGl_irYQpUeW_FmIMxlinK8/edit?usp=sharing
+- Outline: https://docs.google.com/document/d/1gajzoj5UhNc_McXDDJlpFQ5s8vqfFsLjNILBsufzmGs/edit?usp=sharing
+
+- Draft: https://docs.google.com/document/d/1Ve1iRiVqhL-jpKFY5x0dZGl_irYQpUeW_FmIMxlinK8/edit?usp=sharing
 
 - Notes on diplomacy: https://docs.google.com/document/d/10stYnmi4122yy8v10FoHj-9YBbFBWtHEM-3h3e_x-IU/edit?usp=sharing
 
