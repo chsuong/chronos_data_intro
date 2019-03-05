@@ -1,5 +1,5 @@
 
-Non-U.S. Country-Years with Fewest Cables
+Non-U.S. Country-Years with Smallest Tag Traffic
 ==============================================================
 Year    Tagged Country     Number of Cables Relative Frequency
 --------------------------------------------------------------

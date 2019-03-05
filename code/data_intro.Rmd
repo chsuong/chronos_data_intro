@@ -4,9 +4,7 @@ author: "Clara Suong"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   pdf_document: default
-  word_document: default
   toc: yes
-  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -44,13 +42,12 @@ library(stargazer)
 library(corrplot)
 library(pglm) #For negative binomial models for (unbalanced) panel data
 #library(xtable)
-library(gtools)
-library(lmtest)
-library(sandwich)
+#library(gtools)
+#library(lmtest)
+#library(sandwich)
 library(plm) #For linear regression models for (unbalanced) panel data
 library(rowr) #For cbind with fill
-library(sjPlot) #For creating Word-compatible tables from pglm models
-library(sjmisc) #For creating Word-compatible tables from pglm models
+library(texreg) #Tables for pglm models
 
 #setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #If necessary, set as the working directory a location where you can save large data files with file size over 100 mb (github limitation).
 #Create a folder named "external_data" in the working directory
@@ -99,45 +96,141 @@ https://docs.google.com/document/d/13iM00ZfVzV-6mGw8YBGkJFnJFkLe011znb3LQenaIjM/
 * U.S. diplomatic representation (us_dip_rep; COW-compatible version): https://www.dropbox.com/sh/2wnklx04vblnmi1/AABmMxbxvja_JVStsxKD4F2Qa?dl=0
 * U.S. diplomatic visits (us_dip_vis): https://tinyurl.com/yyedcahu
 * U.S. diplomatic appointments (us_dip_app): https://static-content.springer.com/esm/art%3A10.1007%2Fs11558-017-9277-0/MediaObjects/11558_2017_9277_MOESM1_ESM.zip
-* UN voting (un_vote): https://dataverse.harvard.edu/dataset.xhtml?persistentId=hdl:1902.1/12379
-* Actor-level International Crisis Behavior (icb; Version 12): https://sites.duke.edu/icbdata/data-collections/
 * U.S. diplomatic events (us_dip_evt): https://www.dropbox.com/sh/d93tdqanxugvlvg/AAByV97aMEE1Ydh0mkihigrSa?dl=0
 
-#Exploring the database 'declassification_cables'
+#Connecting to and exploring the databases
 
-##Connecting to the database 'declassification_cables'
-```{r echo=FALSE}
+##Number of documents and date ranges for each collection
+```{r}
 driver = dbDriver("MySQL")
 connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
-mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', 
-                 user='de_reader', dbname='declassification_cables')
-```
 
-##Tables in the database 'declassification_cables'
+db_doc_no_date <- function(mydb) {
+  mydb2 = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', 
+                                      dbname=mydb)
+  docs<-tbl(mydb2, 'docs') %>% 
+  select(id, date) %>%
+  collect() %>%
+  distinct()
+  
+  return(c(mydb,nrow(docs), range(docs$date, na.rm = TRUE)))
+}
+
+#
+#db_doc_no_date('declassification_cables')
+db_doc_no_date('declassification_ddrs')
+db_doc_no_date('declassification_frus')
+db_doc_no_date('declassification_kissinger')
+db_doc_no_date('declassification_pdb')
+db_doc_no_date('declassification_clinton') 
+db_doc_no_date('declassification_cabinet')
+db_doc_no_date('declassification_cpdoc')
+```
+#Frequency tables for declassification_cables
 ```{r}
-dbListTables(mydb)
-#Note that many of the tables are yet to be populated (or in the process of being so).
-```
+driver = dbDriver("MySQL")
+connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', 
+                                      dbname='declassification_cables')
 
-##Exploring the main table 'docs' from the database 'declassification_cables'
-```{r echo=FALSE}
-dbListFields(mydb, 'docs')
-print(dbGetQuery(mydb, "Describe docs;"))
-
-#Download and save the table 'docs' in the working directory
-#getwd()
-#docs<-tbl(mydb, "docs")%>%
-#  collect() 
-#save(docs, file = "/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
+#cfpf_docs <- tbl(mydb,'docs') %>%
+#  collect()
+#save("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
 load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
+#Variables: subject; body; date; classification; from; to; tags; concepts; office
 
-#Note that not all cables with the value "full" for the variable "cable_type" actually include full text. 
-#Also note that variables like "page_count" and "line_count" are not really valid for cables without full text.
-#prop.table(table(docs$cable_type))
-#head(docs[,c("cable_type","body")], 20)
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+docs<-
+  docs %>%
+  dplyr::select("subject", 
+                "body", 
+                "date", 
+                "classification", 
+                "from_field", 
+                "to_field", 
+                #"tags", 
+                "concepts", 
+                "office", 
+                "handling") #%>%
+  #mutate_each_(funs(factor),c("subject", "body", "date", "classification", "from_field", "to_field", 
+  #              #"tags", 
+  #              "concepts", "office", "handling"))
+
+C1<-c("subject", 
+      "body", 
+      "date", 
+      "from_field", 
+      "to_field", 
+      "concepts", 
+      "office")
+  
+C2<-c(sum(!is.na(docs$subject)),
+sum(!is.na(docs$body)),
+sum(!is.na(docs$date)),
+sum(!is.na(docs$from_field)),
+sum(!is.na(docs$to_field)),
+sum(!is.na(docs$concepts)),
+sum(!is.na(docs$office)))
+
+ns<-cbind(C1, C2)
+colnames(ns) <- c("Variable","N")
+
+htmlTable(ns,  
+          ctable=c("solid", "double"),
+          caption="Number of Cables with Non-Missing Values")
+
+#Number of Cables by Year
+table_cable_n_year<-
+  docs %>%
+  mutate(year=lubridate::year(date)) %>%
+  group_by(year) %>%
+  tally() %>%
+  mutate(total_n = sum(n),
+        rel.freq = paste0(round(100 * n/total_n, 2), "%")) 
+
+stargazer(table_cable_n_year[c("year","n", "rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "text", 
+          title="Number of Cables By Year", 
+          digits=1, 
+          out="./data_analysis_output/table_cable_n_year.txt",
+          covariate.labels=c("Year","Number of Cables", "Relative Frequency")
+          )
+
+stargazer(table_cable_n_year[c("year","n", "rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "html", 
+          title="Number of Cables By Year", 
+          digits=1, 
+          out="./data_analysis_output/table_cable_n_year.html",
+          covariate.labels=c("Year","Number of Cables", "Relative Frequency")
+          )
+
+#Number of Cables by Classification
+classification_doc <- tbl(mydb,'classification_doc') %>%
+  collect()
+
+classification_doc=apply_labels(classification_doc,
+                                classification_id="Classification",
+                                classification_id=num_lab("1 Secret
+                                                          2 Confidential
+                                                          7 Limited Official Use
+                                                          5 Unclassified")#,
+                                #n="Number of Documents",
+                                #rel_freq="Proportion"
+                                )
+
+table_classification = fre(classification_doc$classification_id) %>% 
+  set_caption("Table: Documents by Classification") %>%
+  htmlTable()
+
+table_classification
 ```
 
-##Examine the different country codes across datasets
+#Examine the different country codes across datasets
 ```{r}
 
 setwd("/Users/clarahsuong/chronos_data_intro")
@@ -152,8 +245,8 @@ countries<-
   tbl(mydb, 'countries') %>% 
   collect() 
 #This table is incomplete. Note that there is no tag for "South Vietnam" but tag "VM" (id: 557) for "Vietnam" according to this table. The 1976 TAGS manual lists VN (tag_id 1976) for "Viet-Nam (North)"and VS (tag_id 1973) for "Viet-Nam (South)". There is also no tag_id for Serbia, Montenegro, Croatia, Azerbaijan. 
-#It's probably better to not include the list of countries with 0 cables in the paper because these may be simply missing due to errors in the metadata. 
 #US is included.
+#Note there is no tag_id for the Soviet Union but one for Russia.
 
 #Merge ISO_3166_1 and ISO_3166_3 (ISO country codes for withdrawn countries). Note that this list often omits retired codes. 
 iso_3166<-
@@ -179,15 +272,7 @@ all_states<-
 
 #Generate a dataframe for all (former and existing) countries for years 1973-79. Note that this includes the US.
 all_states_year<-
-  read_csv("./external_data/cow/states2016.csv") %>%
-  dplyr::select("stateabb","ccode","statenme") %>%
-  #filter(!ccode==2) %>% #Leave out the US
-  rename(cow_ccode=ccode,
-         cow_stateabb=stateabb, 
-         cow_statename=statenme) %>%   
-  mutate(cow_stateabb=as.character(cow_stateabb),
-         cow_statename=as.character(cow_statename)) %>%
-  distinct() %>% #There are duplicates. e.g. countries that existed, disappeared, and then re-appeared. 
+  all_states %>%
   rowr::cbind.fill(c(1973:1979),fill = NA) %>%
   rename(year=object) %>%
   expand(year = 1973:1979, nesting(cow_stateabb, 
@@ -201,20 +286,15 @@ states_70s_year<-
   filter(year>1972 & year<1980) %>%
   rename(cow_ccode=ccode, 
          cow_stateabb=stateabb) %>%
-  left_join(all_states, by=c("cow_ccode","cow_stateabb")) #Include COW state names
+  left_join(all_states, by=c("cow_ccode","cow_stateabb")) #Include COW state names.
 
 states_70s<-
-  read_csv("./external_data/cow/system2016.csv") %>%
-  dplyr::select("stateabb","ccode","year") %>%
-  filter(year>1972 & year<1980) %>%
+  states_70s_year %>%
   dplyr::select(-year) %>%
-  distinct() %>%
-  rename(cow_ccode=ccode, 
-         cow_stateabb=stateabb) %>%
-  left_join(all_states, by=c("cow_ccode","cow_stateabb")) #Include COW state names
+  distinct() 
 ```
 
-###Create a dataframe linking country codes and tag_ids
+##Create a dataframe linking country codes and tag_ids
 ```{r}
 #Re-connect to the database
 #driver = dbDriver("MySQL")
@@ -259,12 +339,12 @@ country_code_tag<-
   mutate(cow_ccode=as.integer(cow_ccode),
          tag_id=as.integer(tag_id)) %>%
   inner_join(all_states, by="cow_ccode") %>% #Include state names from the COW list of all states that have ever existed.
-  rename(country_name=name) %>%
+  rename(country_name=name) %>% 
   filter(!is.na(cow_ccode) & !is.na(tag_id))%>% #Drop the observations with missing COW country code and missing tag_id.
-  dplyr::select(-iso3n) 
+  dplyr::select(-iso3n) #Note the 2 tags for Vietnam.
 ```
 
-#Tag traffic by country
+#Tag traffic by country-year and by country
 
 ##Download, save, or load the tables for tags and docs (doc_id and date) in the working directory and count the number of cables tagged for each country
 ```{r results='hide'}
@@ -311,7 +391,8 @@ cable_n_country_day<-
                    "country_id", 
                    "country_name", 
                    "date")) %>%
-  tally() 
+  tally() %>%
+  ungroup()
 save(cable_n_country_day, file = "./data/cable_n_country_day.RData")
 #load("./data/cable_n_country_day.RData") #Note that this includes neither all dates nor all countries on the COW list.
 
@@ -331,7 +412,7 @@ cable_n_all_states_year<-
   right_join(all_states_year, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
   rename(n_c_y=n) %>%
   mutate(n_c_y= replace(n_c_y, is.na(n_c_y), 0)) %>%
-  ungroup %>%
+  ungroup() %>%
   mutate(total_n = sum(n_c_y)) %>%
   arrange(year, cow_ccode)
 save(cable_n_all_states_year, file = "./data/cable_n_all_states_year.RData")
@@ -345,7 +426,7 @@ cable_n_all_states<-
   right_join(all_states, by=c("cow_ccode", "cow_stateabb","cow_statename")) %>%
   rename(n_c=n) %>%
   mutate(n_c= replace(n_c, is.na(n_c), 0)) %>%
-  ungroup %>%
+  ungroup() %>%
   mutate(total_n = sum(n_c)) %>%
   arrange(desc(n_c))
 save(cable_n_all_states, file = "./data/cable_n_all_states.RData")
@@ -359,7 +440,7 @@ cable_n_states_70s_year<-
   right_join(states_70s_year, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
   rename(n_c_y=n) %>%
   mutate(n_c_y= replace(n_c_y, is.na(n_c_y), 0)) %>%
-  ungroup %>%
+  ungroup() %>%
   mutate(total_n = sum(n_c_y)) %>%
   arrange(year, cow_ccode)
 save(cable_n_states_70s_year, file = "./data/cable_n_states_70s_year.RData")
@@ -373,7 +454,7 @@ cable_n_states_70s<-
   right_join(states_70s, by=c("cow_ccode", "cow_stateabb","cow_statename")) %>%
   rename(n_c=n) %>%
   mutate(n_c= replace(n_c, is.na(n_c), 0)) %>%
-  ungroup %>%
+  ungroup() %>%
   mutate(total_n = sum(n_c)) %>%
   arrange(desc(n_c))
 save(states_70s, file = "./data/cable_n_states_70s.RData")
@@ -382,11 +463,8 @@ save(states_70s, file = "./data/cable_n_states_70s.RData")
 #Note that the total ns for each dataset for differs a bit because: cable_n_states_70s and cable_n_states_70s_year look at only existing countries? or missing values?
 ```
 
-
-
-
 ##Examine cables tagged with certain countries as a test
-```{r}
+```{r, echo=FALSE}
 #Check tag_id for certain countries
 country_code_tag%>%filter(str_detect(country_name, 'China'))
 country_code_tag%>%filter(str_detect(country_name, 'Korea'))
@@ -397,44 +475,49 @@ country_code_tag%>%filter(str_detect(country_name, 'Germany'))
 country_code_tag%>%filter(str_detect(country_name, 'Egypt'))
 
 cable_china<-
-  tag_doc2 %>%
+  country_tag_doc2 %>%
   filter(tag_id==386) %>%
   group_by(date) %>%
   tally() 
   
 cable_nkorea<-
-  tag_doc2 %>%
+  country_tag_doc2 %>%
   filter(tag_id==453)%>%
   group_by(date) %>%
   tally() 
 
 cable_viet<-
-  tag_doc2 %>%
-  filter(tag_id==557) %>%
+  country_tag_doc2 %>%
+  filter(tag_id==557 | tag_id==1976) %>%
   group_by(date) %>%
   tally() 
-#Note that the tag for South Vietnam is "deleted" and its tag_id missing.
+
+cable_s_viet<-
+  country_tag_doc2 %>%
+  filter(tag_id==1973) %>%
+  group_by(date) %>%
+  tally() 
 
 cable_afghan<-
-  tag_doc2 %>%
+  country_tag_doc2 %>%
   filter(tag_id==342) %>%
   group_by(date) %>%
   tally()
 
 cable_iran<-
-  tag_doc2 %>%
+  country_tag_doc2 %>%
   filter(tag_id==440) %>%
   group_by(date) %>%
   tally() 
 
 cable_east_germany<-
-  tag_doc2 %>%
+  country_tag_doc2 %>%
   filter(tag_id==419) %>%
   group_by(date) %>%
   tally() 
 
 cable_egypt<-
-  tag_doc2 %>%
+  country_tag_doc2 %>%
   filter(tag_id==402) %>%
   group_by(date) %>%
   tally() 
@@ -533,25 +616,54 @@ stargazer(as.data.frame(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,])[c(
           covariate.labels=c("COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country"))
 
 ```
+
 ##Histograms and density plots
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 plot(density(cable_n_states_70s_year$n_c_y))
 plot(density(cable_n_states_70s$n_c))
-#The distribution for the count variables is zero-inflated. Convert the raw number of cables to a 0-1 index???  
+#The distribution for the count variables is right skewed. Convert the raw number of cables to a 0-1 index???  
+
+#Main plot for tag traffic
+options(scipen=10000000)
+png("./data_analysis_output/cable_n_c_y_c_hist.png")
+layout(matrix(c(1:2), 2, 1,
+ byrow = TRUE))
+hist(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,]$n_c_y, # histogram
+ #col = "peachpuff", # column color
+ border = "black",
+ prob = TRUE, # show densities instead of frequencies
+ ylim = c(0, 0.0004),
+ xlab = "Tag Traffic",
+ main = "Existing Non-U.S. Country-Years")
+lines(density(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,]$n_c_y), # density plot
+ lwd = 2, # thickness of line
+ col = "chocolate3")
+hist(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c, # histogram
+ #col = "peachpuff", # column color
+ border = "black",
+ prob = TRUE, # show densities instead of frequencies
+ #xlim = c(0, 20000), 
+  ylim = c(0, 0.0001),
+ xlab = "Tag Traffic",
+ main = "Existing Non-U.S. Countries")
+lines(density(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c), # density plot
+ lwd = 2, # thickness of line
+ col = "chocolate3")
+dev.off()
 
 #Country-year level
 options(scipen=10000000)
 png("./data_analysis_output/cable_n_states_year_hist.png")
-layout(matrix(c(1:3), 3, 1,
+layout(matrix(c(1:2), 2, 1,
  byrow = TRUE))
 hist(cable_n_all_states_year$n_c_y, # histogram
  #col = "peachpuff", # column color
  border = "black",
  prob = TRUE, # show densities instead of frequencies
  ylim = c(0, 0.0004),
- xlab = "Number of Cables Tagged",
+ xlab = "Tag Traffic",
  main = "All Country-Years")
 lines(density(cable_n_all_states_year$n_c_y), # density plot
  lwd = 2, # thickness of line
@@ -561,34 +673,34 @@ hist(cable_n_states_70s_year$n_c_y, # histogram
  border = "black",
  prob = TRUE, # show densities instead of frequencies
  ylim = c(0, 0.0004),
- xlab = "Number of Cables Tagged",
+ xlab = "Tag Traffic",
  main = "Existing Country-Years")
 lines(density(cable_n_states_70s_year$n_c_y), # density plot
  lwd = 2, # thickness of line
  col = "chocolate3")
-hist(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,]$n_c_y, # histogram
- #col = "peachpuff", # column color
- border = "black",
- prob = TRUE, # show densities instead of frequencies
- ylim = c(0, 0.0004),
- xlab = "Number of Cables Tagged",
- main = "Existing Non-U.S. Country-Years")
-lines(density(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,]$n_c_y), # density plot
- lwd = 2, # thickness of line
- col = "chocolate3")
+#hist(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,]$n_c_y, # histogram
+# #col = "peachpuff", # column color
+# border = "black",
+# prob = TRUE, # show densities instead of frequencies
+# ylim = c(0, 0.0004),
+# xlab = "Tag Traffic",
+# main = "Existing Non-U.S. Country-Years")
+#lines(density(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,]$n_c_y), # density plot
+# lwd = 2, # thickness of line
+# col = "chocolate3")
 dev.off()
 
 #Country level
 png("./data_analysis_output/cable_n_states_hist.png")
-layout(matrix(c(1:3), 3, 1,
+layout(matrix(c(1:2), 2, 1,
  byrow = TRUE))
 hist(cable_n_all_states$n_c, # histogram
  #col = "peachpuff", # column color
  border = "black",
  prob = TRUE, # show densities instead of frequencies
  #xlim = c(0, 20000), 
- ylim = c(0, 0.0004),
- xlab = "Number of Cables",
+  ylim = c(0, 0.0001),
+ xlab = "Tag Traffic",
  main = "All Countries")
 lines(density(cable_n_all_states$n_c), # density plot
  lwd = 2, # thickness of line
@@ -598,23 +710,23 @@ hist(cable_n_states_70s$n_c, # histogram
  border = "black",
  prob = TRUE, # show densities instead of frequencies
  #xlim = c(0, 20000), 
-  ylim = c(0, 0.0004),
- xlab = "Number of Cables",
+  ylim = c(0, 0.0001),
+ xlab = "Tag Traffic",
  main = "Existing Countries")
 lines(density(cable_n_states_70s$n_c), # density plot
  lwd = 2, # thickness of line
  col = "chocolate3")
-hist(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c, # histogram
- #col = "peachpuff", # column color
- border = "black",
- prob = TRUE, # show densities instead of frequencies
- #xlim = c(0, 20000), 
-  ylim = c(0, 0.0004),
- xlab = "Number of Cables",
- main = "Existing Non-U.S. Countries")
-lines(density(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c), # density plot
- lwd = 2, # thickness of line
- col = "chocolate3")
+#hist(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c, # histogram
+# #col = "peachpuff", # column color
+# border = "black",
+# prob = TRUE, # show densities instead of frequencies
+# #xlim = c(0, 20000), 
+#  ylim = c(0, 0.0001),
+# xlab = "Tag Traffic",
+# main = "Existing Non-U.S. Countries")
+#lines(density(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c), # density plot
+# lwd = 2, # thickness of line
+# col = "chocolate3")
 dev.off()
 ```
 
@@ -625,15 +737,16 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 table_state_year_top20<- 
   cable_n_states_70s_year %>%
   filter(cow_ccode!=2) %>%
-  mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 0), "%")) %>%
+  mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 2), "%")) %>%
   arrange(desc(n_c_y)) %>%
-  top_n(n = 20, wt = n_c_y) 
+  top_n(n = 20, wt = n_c_y) %>%
+  mutate(cow_statename= replace(cow_statename, cow_statename=="Russia", "Soviet Union")) #Replace "Russia" with "Soviet Union"
 
 stargazer(table_state_year_top20[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Non-U.S. Country-Years with Most Cables", 
+          title="Non-U.S. Country-Years with Highest Tag Traffic", 
           digits=1, 
           out="./data_analysis_output/top20_cable_n_state_year.txt",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
@@ -642,7 +755,7 @@ stargazer(table_state_year_top20[c("year", "cow_statename", "n_c_y","rel.freq")]
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Non-U.S. Country-Years with Most Cables", 
+          title="Non-U.S. Country-Years with Highest Tag Traffic", 
           digits=1, 
           out="./data_analysis_output/top20_cable_n_state_year.html",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
@@ -652,31 +765,34 @@ stargazer(table_state_year_top20[c("year", "cow_statename", "n_c_y","rel.freq")]
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-table_state_year_bottom20<- 
+table_state_year_bottom10<- 
   cable_n_states_70s_year %>%
   filter(cow_ccode!=2) %>%
-  mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 0), "%")) %>%
+  mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 2), "%")) %>%
   arrange(desc(n_c_y)) %>%
-  top_n(n = -20, wt = n_c_y) 
+  top_n(n = -10, wt = n_c_y) %>%
+  mutate(cow_statename= replace(cow_statename, cow_statename=="Russia", "Soviet Union")) #Replace "Russia" with "Soviet Union"
 
-stargazer(table_state_year_bottom20[c("year", "cow_statename", "n_c_y","rel.freq")],
+
+stargazer(table_state_year_bottom10[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Non-U.S. Country-Years with Fewest Cables", 
-          digits=1, 
-          out="./data_analysis_output/bottom20_cable_n_state_year.txt",
+          title="Non-U.S. Country-Years with Lowest Tag Traffic", 
+          digits=2, 
+          out="./data_analysis_output/bottom10_cable_n_state_year.txt",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 
-stargazer(table_state_year_bottom20[c("year", "cow_statename", "n_c_y","rel.freq")],
+stargazer(table_state_year_bottom10[c("year", "cow_statename", "n_c_y","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Non-U.S. Country-Years with Fewest Cables", 
-          digits=1, 
-          out="./data_analysis_output/bottom20_cable_n_state_year.html",
+          title="Non-U.S. Country-Years with Lowest Tag Traffic", 
+          digits=2, 
+          out="./data_analysis_output/bottom10_cable_n_state_year.html",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
 ```
+
 
 ##Countries most frequently tagged in cables
 ```{r}
@@ -688,9 +804,11 @@ table_state_top20<-
   #group_by(cow_ccode, cow_stateabb, cow_statename) %>% 
   #summarise(n_c = sum(n_c)) %>%
   #ungroup %>%
-  mutate(rel.freq = paste0(round(100 * n_c/total_n, 0), "%")) %>%
+  mutate(rel.freq = paste0(round(100 * n_c/total_n, 2), "%")) %>%
   arrange(desc(n_c)) %>%
-  top_n(n = 20, wt = n_c) 
+  top_n(n = 20, wt = n_c) %>%
+  mutate(cow_statename= replace(cow_statename, cow_statename=="Russia", "Soviet Union")) #Replace "Russia" with "Soviet Union"
+
 
 stargazer(table_state_top20[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
@@ -715,37 +833,143 @@ stargazer(table_state_top20[c("cow_statename", "n_c","rel.freq")],
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-table_state_bottom20<- 
+table_state_bottom10<- 
   cable_n_states_70s %>%
   filter(cow_ccode!=2) %>%
   mutate(rel.freq = paste0(round(100 * n_c/total_n, 0), "%")) %>%
   arrange(desc(n_c)) %>%
-  top_n(n = -20, wt = n_c) 
+  top_n(n = -10, wt = n_c) %>%
+  mutate(cow_statename= replace(cow_statename, cow_statename=="Russia", "Soviet Union")) #Replace "Russia" with "Soviet Union"
 
-stargazer(table_state_bottom20[c("cow_statename", "n_c","rel.freq")],
+
+stargazer(table_state_bottom10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
           title="Non-U.S. Countries Least Frequently Tagged in Cables", 
           digits=1, 
-          out="./data_analysis_output/bottom20_cable_n_state.txt",
+          out="./data_analysis_output/bottom10_cable_n_state.txt",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 
-stargazer(table_state_bottom20[c("cow_statename", "n_c","rel.freq")],
+stargazer(table_state_bottom10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
           title="Non-U.S. Countries Least Frequently Tagged in Cables", 
           digits=1, 
-          out="./data_analysis_output/bottom20_cable_n_state.html",
+          out="./data_analysis_output/bottom10_cable_n_state.html",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
+```
+
+##Plot of tag traffic of 10 countries
+```{r}
+
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+coi_10_list<-table_state_top20$cow_ccode[1:10]
+
+coi_10<-
+  cable_n_country_day %>%
+  filter(cow_ccode %in% coi_10_list) %>%
+    mutate(year=lubridate::year(date), 
+         month=lubridate::month(date), 
+         ym=as.yearmon(paste(year, month),"%Y %m")
+         ) %>%
+  group_by(cow_ccode, cow_statename, country_id, country_name, month, year) %>%
+  summarise(sum_monthly = sum(n)) %>%
+  ungroup() %>%
+  mutate(month2 = as.Date(paste0(year,"-", month,"-01"),"%Y-%m-%d"))%>%
+  mutate(cow_statename= replace(cow_statename, cow_statename=="Russia", "Soviet Union")) #Replace "Russia" with "Soviet Union"
+
+
+png("./data_analysis_output/key10.png", width = 800, height = 600)
+#layout(matrix(c(1:3), 3, 1,
+# byrow = TRUE))
+ggplot(coi_10, aes(x = month2, y = sum_monthly)) + 
+  geom_line(aes(color = cow_statename), size = 1) +
+  labs(#title = "Tag Traffic of Key 10 Countries",
+           subtitle = "Data Plotted by Month",
+           y = "Tag Traffic Volume",
+           x = "Date") + 
+  theme_bw() +
+  theme(legend.title=element_blank(), 
+        legend.position = c(0, 1), 
+        legend.justification = c(0, 1))
+dev.off()
+```
+#Country tag traffic vs. cable traffic
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+#Re-connect to the database
+driver = dbDriver("MySQL")
+connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
+
+network_docs_date2 <-
+  tbl(mydb, 'network_docs') %>% 
+  collect() %>%
+  inner_join(doc_date2, by=c("id"="doc_id"))
+
+moscow<-
+  network_docs_date2 %>% 
+  filter(node_a=="MOSCOW" | node_b=="MOSCOW") %>%
+  mutate(year=lubridate::year(date)) %>%
+  group_by(year) %>%
+  tally()
+
+russia_tag<-
+  cable_n_states_70s_year %>%
+  filter(cow_statename=="Russia")
+
+russia_tag_network<-cbind(russia_tag[c("year", "n_c_y")], moscow["n"])
+colnames(russia_tag_network) <- c("Year","Tag Traffic", "Cable Traffic")
+
+stargazer(russia_tag_network,
+          type = "html", 
+          #flip = TRUE,
+          summary = FALSE,
+          rownames = FALSE,
+          title="Comparison of Tag Traffic and Cable Traffic", 
+          digits=1, 
+          out="./data_analysis_output/russia_tag_network.html",
+          covariate.labels=c("Year", "Number of Cables Tagged<br>with the U.S.S.R.", "Number of Cables Sent by/to<br>the U.S. Embassy in Moscow")
+          )
+  
+stargazer(russia_tag_network,
+          type = "text", 
+          #flip = TRUE,
+          summary = FALSE,
+          rownames = FALSE,
+          title="Comparison of Tag Traffic and Cable Traffic", 
+          digits=1, 
+          out="./data_analysis_output/russia_tag_network.txt",
+          covariate.labels=c("Year", "Number of Cables Tagged with the U.S.S.R.", "Number of Cables Sent by/to the U.S. Embassy in Moscow")
+          )
+```
+#Iran
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+#Re-connect to the database
+driver = dbDriver("MySQL")
+connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
+
+iran_tag<-
+  cable_n_states_70s_year %>%
+  filter(cow_statename=="Iran")
+
+iran_tag
 ```
 
 #U.S. diplomatic representation
 
-##No need to import and load the COW data for U.S. diplomatic representation
+##Import and load the COW data for U.S. diplomatic representation
 ```{r echo=FALSE}
-#us_dip_rep_cow<-  read_csv("./external_data/cow_diplomatic_exchange_2006.1/Diplomatic_Exchange_2006v1.csv", locale = locale(encoding = "UTF-8")) 
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+us_dip_rep_cow<-read_csv("./external_data/cow/Diplomatic_Exchange_2006v1.csv")
 ```
 
 ##Import and load the Moyer data for U.S. diplomatic representation
@@ -817,9 +1041,9 @@ us_dip_rep_app <-
             performanceMU_year=mean(performanceMU, na.rm = TRUE),
             ambassador_year=mean(ambassador, na.rm = TRUE)
             ) %>%
+  ungroup() %>%
   right_join(states_70s_year, by=c("cow_ccode", "year")) %>%  
   mutate(dip_rep_a=replace(dip_rep_a, is.na(dip_rep_a), 0)) 
-
 ```
 
 #U.S. Diplomatic Visits
@@ -933,49 +1157,63 @@ us_dip_evt<-
   group_by(.dots=c("year","cow_ccode")) %>%
   tally() %>%
   right_join(states_70s_year, by=c("cow_ccode", "year")) %>%
+  ungroup() %>%
   rename(evt_n_c_y=n) %>%
   mutate(evt_n_c_y= replace(evt_n_c_y, is.na(evt_n_c_y), 0))
 ```
 
-```{r echo=FALSE}
-#Import and load the data on international crises
-
-icb<-
-  read_csv("../external_data/icb/icb2v12.csv") %>%
-#Rule out crises that end before 1970 and crises that start after 1979
-  filter(yrterm>1969 & systrgyr<1980) %>%
-  mutate(ym_term=as.yearmon(paste(yrterm, moterm),"%Y %m"), 
-         ym_trg=as.yearmon(paste(systrgyr, systrgmo), "%Y %m"), 
-         duration=(ym_term-ym_trg)*12) #%>% #Some crises are missing the day of occurence but most have the month and the year.
-
-#Note that the longest duration of a crisis (from a trigger event to its termination) is 3 years.
-#max(icb$yrterm-icb$systrgyr, na.rm=TRUE)
-```
-
 #Compare the country-year data
 ```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
 us_dip_c_y<-
   cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,] %>%
   left_join(us_dip_rep_moyer, by=c("cow_ccode", "year")) %>%
   left_join(us_dip_rep_app, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
   left_join(us_dip_vis, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
   left_join(us_dip_evt, by=c("year", "cow_ccode", "cow_stateabb","cow_statename")) %>%
-  mutate(rep_diff=ifelse(dip_rep_a!=dip_rep_m,1, 0)) %>%
+#  mutate(rep_diff=ifelse(dip_rep_a!=dip_rep_m,1, 0)) %>%
   group_by(cow_ccode) %>%
   mutate(lag.n_c_y = dplyr::lag(n_c_y, n = 1, default = NA)) %>%
   ungroup()
 
-
 #How is dip_rep_m different from dip_rep_a?
 #table(us_dip_c_y$rep_diff)
-```  
 
-```{r echo=FALSE}
-theme_set(theme_bw())
-ggplot(us.cable_n.rep_m.vis.evt,
-       aes(x,y,colour=factor(i)))+
-  geom_point(position=position_jitter(width=0.01))+
-  theme(legend.position="none")
+stargazer(as.data.frame(us_dip_c_y)[c("year","cow_ccode",
+                                      "n_c_y",
+                                      "dip_rep_m","dip_focus",
+                                      "politicalappointee_year",#"performanceMU_year","ambassador_year",
+                                      "bi_PRE", #"bi_SOS"
+                                      "evt_n_c_y")], 
+          type = "text", 
+          title="Summary Statistics of Variables on U.S. Diplomacy (Unit: Country-Year)", 
+          digits=1, 
+          out="./data_analysis_output/desc_us_dip_states_70s_year.txt",
+          covariate.labels=c("Year", "COW Country Codes", 
+                             "Tag Traffic",
+                            "U.S. Diplomatic Representation","U.S. Diplomatic Focus",
+                            "U.S. Ambassador Is a Political Appointee",
+                            "Number of U.S. Presidential Visits",
+                            "Number of U.S. Diplomatic Events")
+          )
+
+stargazer(as.data.frame(us_dip_c_y)[c("year","cow_ccode",
+                                      "n_c_y",
+                                      "dip_rep_m","dip_focus",
+                                      "politicalappointee_year",#"performanceMU_year","ambassador_year",
+                                      "bi_PRE"#, "bi_SOS"
+                                      )],  
+          type = "html", 
+          title="Summary Statistics of Variables on U.S. Diplomacy", 
+          digits=1, 
+          out="./data_analysis_output/desc_us_dip_states_70s_year.html",
+          covariate.labels=c("Year", "COW Country Codes", 
+                             "Tag Traffic",
+                            "U.S. Diplomatic Representation","U.S. Diplomatic Focus",
+                            "U.S. Ambassador Is a Political Appointee",
+                            "Number of U.S. Presidential Visits",
+                            "Number of U.S. Diplomatic Events"))
 ```  
 
 ##Correlation plots
@@ -995,40 +1233,9 @@ res2 <- cor.mtest(DF, conf.level = .99)
 corrplot(M, p.mat = res1$p, sig.level = .05)
 ```
 
-###Check for overdispersion of the DV
-```{r}
-is.pbalanced(us_dip_c_y)
-
-plot(table(us_dip_c_y$n_c_y))
-clog <- function(x) log(x + 0.5)
-cfac <- function(x, breaks = NULL) {
-if(is.null(breaks)) breaks <- unique(quantile(x, 0:10/10))
-x <- cut(x, breaks, include.lowest = TRUE, right = FALSE)
-levels(x) <- paste(breaks[-length(breaks)], ifelse(diff(breaks) > 1,
-  c(paste("-", breaks[-c(1, length(breaks))] - 1, sep = ""), "+"), ""),
-  sep = "")
-return(x)
-}
-plot(clog(n_c_y) ~ dip_rep_m, data = us_dip_c_y)
-plot(clog(n_c_y) ~ dip_focus, data = us_dip_c_y)
-plot(clog(n_c_y) ~ dip_rep_a, data = us_dip_c_y)
-plot(clog(n_c_y)~ politicalappointee_year, data = us_dip_c_y)
-plot(clog(n_c_y) ~ performanceMU_year, data = us_dip_c_y)
-plot(clog(n_c_y) ~ ambassador_year, data = us_dip_c_y)
-plot(clog(n_c_y) ~ bi_PRE, data = us_dip_c_y)
-plot(clog(n_c_y) ~ bi_SOS, data = us_dip_c_y)
-plot(clog(n_c_y) ~ cfac(evt_n_c_y), data = us_dip_c_y)
-
-glm.nb_politicalappointee <- MASS::glm.nb(n_c_y~politicalappointee_year+lag.n_c_y, data = us_dip_c_y)
-
-coeftest(glm.nb_politicalappointee, vcov = sandwich)
-```
-
-##Fixed Effects
+#Negative binomial models with fixed effects for unbalanced panel
 ```{r, results='asis', warning=FALSE,message=FALSE}
 setwd("/Users/clarahsuong/chronos_data_intro")
-
-
 
 #coef_test(fixed_rep_a, vcov = "CR1", cluster = "individual", test = "naive-t")
 
@@ -1079,6 +1286,7 @@ fixed_rep_app <- pglm(n_c_y~
                    #dip_focus+
                    #dip_rep_a+
                    politicalappointee_year#+
+                   #ambassador_year
                    #performanceMU_year#+
                    #bi_PRE+
                    #bi_SOS+
@@ -1138,54 +1346,30 @@ m_evt=summary(fixed_evt)
 m_evt
 ```
 
+##Table for the negative binomial models
 ```{r}
-var = c('Intercept', 
-        "dip_rep_m",
-        "dip_focus", 
-        "bi_PRE", 
-        #"bi_SOS",
-        "evt_n_c_y")
+setwd("/Users/clarahsuong/chronos_data_intro")
 
-model=summary(fixed1.4)
-
-model_summary <- 
-  model$estimate %>% 
-  as.data.frame() %>% 
-  dplyr::mutate(term = var, 
-         Estimate = round(Estimate, 2), 
-         SE = round(`Std. error`, 2), 
-         p.value = stars.pval(`Pr(> t)`)) %>% 
- select(term, Estimate, SE, p.value) %>%
- set_caption("Table: Negative Binomial Regression of Country-Year's Number of Cables") %>%
- htmlTable(ctable=c("solid", "double"),rnames = FALSE)
-
-#write_tableHTML(tableHTML(as.data.frame(model_summary)), file = #'negbin.cable_n_c_y.html')
-
-model_summary
-
-#xtable(model_summary)
-
-summary.pglm()
-
-tab_model(m_rep_m, m_rep_a,m_rep_m2, m_rep_app, m_vis1, m_evt,  
-        #labelDependentVariables=labdep,
-        #labelPredictors=lab,
-        file="pglm.table.html",
-        pvaluesAsNumbers=T,
-        separateConfColumn=T)
+htmlreg(list(fixed_rep_m, 
+             fixed_rep_m2,
+             fixed_rep_app, 
+             fixed_vis1,
+             fixed_evt), 
+    custom.coef.names = c("(Intercept)", 
+                          "U.S. Diplomatic Representation",
+                          "U.S. Diplomatic Focus",
+                          "U.S. Ambassador is a political appointee",
+                          "Number of U.S. Presidential Visits",
+                          "Number of U.S. Diplomatic Events"),
+    file = "./data_analysis_output/pgml_us_dip_c_y.html", 
+    caption = "Negative Binomial Regression of Tag Traffic (Unit: Country-Year)", 
+    caption.above= TRUE,     
+    inline.css = FALSE, doctype = TRUE, html.tag = TRUE, 
+    head.tag = TRUE, body.tag = TRUE)
+#unlink("texreg.doc")
 ```
 
-stargazer(fixed1.1,
-          fixed1.2,
-          fixed1.3,          
-          fixed1.4,
-          type="html",
-          dep.var.labels=c("Number of Cables Tagged"),
-          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
-          out="./data_analysis_output/negbin_cable_n_c_y.html")
-```
-
-```{r}
+```{r, echo=FALSE}
 #Unestimatable or unused pglm models
 fixed_rep_a <- pglm(n_c_y~
                    #dip_rep_m#+
@@ -1407,9 +1591,7 @@ pooling2 <- pglm(n_c_y~
                  index=c("cow_ccode", "year"), family = negbin, model="pooling"#, method = "nr"
               )
 summary(pooling2)
-```
 
-```{r}
 #Negative binomial models without panel effect and with cluster SEs and lagged years
 
 glm.nb_irep1 <- glm.nb(n_c_y~dip_irep, data = cable_n_irep_app)
@@ -1431,7 +1613,6 @@ stargazer(glm.nb_irep1,
           dep.var.labels=c("Number of Cables Tagged"),
           #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
           out="../data_analysis_output/cable_n_irep_app.txt")
-```
 
 #Slightly modified from the analysis in Lebovic and Saunders (2016)' Tables 3 and 4
 glm.nb_pre2 <- glm.nb(n_c_y~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
@@ -1477,62 +1658,3 @@ stargazer(glm.nb_irep1, glm.nb_app1,
           #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
           out="../data_analysis_output/cable_n_irep_app.txt")
 ```
-
-#Compare the yearly tag traffic with the country-year data on diplomatic visits
-```{r, results="hide",warning=FALSE,message=FALSE}
-cable_n_vis_country_y<-
-  cable_n_country_y %>%
-  rename(cowid=cow_ccode) %>%
-  inner_join(us_dip_vis, by=c("year", "cowid")) 
-
-glm.nb_pre1 <- glm.nb(n_c_y~bi_PRE, data = cable_n_vis_country_y)
-
-glm.nb_pre1 <- glm.nb(n_c_y~bi_PRE, data = cable_n_vis_country_y)
-glm.nb_sos1 <- glm.nb(n_c_y~bi_SOS, data = cable_n_vis_country_y)
-
-#Slightly modified from the analysis in Lebovic and Saunders (2016)' Tables 3 and 4
-glm.nb_pre2 <- glm.nb(n_c_y~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
-#Cluster by cowid
-
-glm.nb_sos2 <- glm.nb(n_c_y~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L1_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
-#Cluster by cowid
-
-glm.nb_pre3 <- glm.nb(n_c_y~bi_PRE+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
-#Cluster by cowid
-
-glm.nb_sos3 <- glm.nb(n_c_y~bi_SOS+mil_ratio+USmilaid+allies+USdefense+USdefense_EUR+UStrade+energypc+USalign+UNpart+mpower+FOR+CAR+demo+bi_L14_SOS+bi_L14_PRE+bi_L58_SOS+bi_L58_PRE+EUR+AFR+MEA+SCA+EAP, data = cable_n_vis_country_y)
-#Cluster by cowid
-
-#Check model assumptions and robustness (https://stats.idre.ucla.edu/r/dae/negative-binomial-regression/)
-
-#Consider using the event count time series models PAR(p) and PEWMA models (http://www.utdallas.edu/~pbrandt/Patrick_Brandts_Website/Code_%26_Software.html) or negative binomials or tscount (https://cran.r-project.org/web/packages/tscount/vignettes/tsglm.pdf) for robustness check.
-
-#Negotive binomial regression models
-stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, 
-          type="html",
-          dep.var.labels=c("Number of Cables Tagged"),
-          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
-          out="../data_analysis_output/cable_n_pres_visit.html"
-          )
-
-stargazer(glm.nb_sos1, glm.nb_sos2, glm.nb_sos3, 
-          type="html",
-          dep.var.labels=c("Number of Cables Tagged"),
-          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
-          out="../data_analysis_output/cable_n_sos_visit.html"
-          )
-
-stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, glm.nb_sos1, glm.nb_sos2, glm.nb_sos3, 
-          type="html",
-          dep.var.labels=c("Number of Cables Tagged"),
-          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
-          out="../data_analysis_output/cable_n_visit.html")
-
-stargazer(glm.nb_pre1, glm.nb_pre2, glm.nb_pre3, glm.nb_sos1, glm.nb_sos2, glm.nb_sos3, 
-          type="text",
-          dep.var.labels=c("Number of Cables Tagged"),
-          #covariate.labels=c("Gross horsepower","Rear axle ratio","Four foward gears","Five forward gears","Type of transmission (manual=1)"), 
-          out="../data_analysis_output/cable_n_visit.txt")
-```
-
-

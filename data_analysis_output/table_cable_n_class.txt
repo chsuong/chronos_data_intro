@@ -1,0 +1,74 @@
+
+Number of Cables By Classification
+============================================================
+Classification           Number of Cables Relative Frequency
+------------------------------------------------------------
+                              559879            17.42%      
+                                1                 0%        
+-                               1                 0%        
+(B)                             1                 0%        
+(SI                             1                 0%        
+* * * * * * * * MAFVVZCZ        1                 0%        
+2.                              1                 0%        
+3                               1                 0%        
+7.                              1                 0%        
+A                               1                 0%        
+AND                             2                 0%        
+ARRANGEMENTS,                   1                 0%        
+BE                              1                 0%        
+BEFORE                          1                 0%        
+BY                              1                 0%        
+CANNOT                          1                 0%        
+CONFIDENTIAL                  494823            15.39%      
+CONFIDENTIAL,                   1                 0%        
+CONFIDENTIAL;                   1                 0%        
+CONFIDENTIAL.                   1                 0%        
+CONFIDENTIALLY                  1                 0%        
+DIRECTORATE                     1                 0%        
+DUCTIVE                         1                 0%        
+END                             1                 0%        
+EXPERTS                         1                 0%        
+GOALS                           1                 0%        
+IS                              1                 0%        
+LIMITED OFFICIAL USE          513769            15.98%      
+MY                              1                 0%        
+n/a                             4                 0%        
+OF                              1                 0%        
+OTHER                           1                 0%        
+OTHERS,                         1                 0%        
+PREVENT                         1                 0%        
+RETARGETING,                    1                 0%        
+SECRET                        127332            3.96%       
+SECRET,                         1                 0%        
+SECRET"                         1                 0%        
+SECRET)                         1                 0%        
+SECRETARIAL                     2                 0%        
+SECRETARIAT                     33                0%        
+SECRETARIAT,                    2                 0%        
+SECRETARIAT.                    4                 0%        
+SECRETARIATS                    1                 0%        
+SECRETARIES                     1                 0%        
+SECRETARY                       70                0%        
+SECRETARY-                      3                 0%        
+SECRETARY-GENERAL               1                 0%        
+SECRETARY,                      2                 0%        
+SECRETARY.                      2                 0%        
+SECRETARY'                      1                 0%        
+SECRETARY'S                     6                 0%        
+SECRETS,                        1                 0%        
+SECRETS.                        1                 0%        
+STUDY                           1                 0%        
+THAT                            1                 0%        
+THE                             1                 0%        
+THIS                            1                 0%        
+TO                              3                 0%        
+TREPRISES.                      1                 0%        
+U* CLASSIFIED                   1                 0%        
+UNCLASSIFIED                 1518305            47.24%      
+UNCLASSIFIED.                   2                 0%        
+UNCLASSIFIED"                   1                 0%        
+UP                              1                 0%        
+WELCOME                         1                 0%        
+WHICH                           1                 0%        
+WITHDRAWALS                     1                 0%        
+------------------------------------------------------------

@@ -1,26 +1,26 @@
 
-Non-U.S. Country-Years with Most Cables
+Non-U.S. Country-Years with Highest Tag Traffic
 ===================================================================
 Year       Tagged Country       Number of Cables Relative Frequency
 -------------------------------------------------------------------
-1976           Russia                24856               1%        
-1975           Russia                23404               1%        
-1978           Russia                22244               1%        
-1979           Russia                21978               1%        
-1977           Russia                21836               1%        
-1974           Russia                20876               1%        
-1979            Iran                 14433               0%        
-1977       United Kingdom            14145               0%        
-1979           Israel                13974               0%        
-1978           Israel                13918               0%        
-1976 German Democratic Republic      13775               0%        
-1977 German Democratic Republic      13606               0%        
-1976       United Kingdom            12885               0%        
-1979           Egypt                 12764               0%        
-1978 German Democratic Republic      12733               0%        
-1978       United Kingdom            12630               0%        
-1979       United Kingdom            12605               0%        
-1975    Republic of Vietnam          12551               0%        
-1975 German Democratic Republic      12228               0%        
-1975           Japan                 12087               0%        
+1976        Soviet Union             24856             0.74%       
+1975        Soviet Union             23404              0.7%       
+1978        Soviet Union             22244             0.66%       
+1979        Soviet Union             21978             0.66%       
+1977        Soviet Union             21836             0.65%       
+1974        Soviet Union             20876             0.62%       
+1979            Iran                 14433             0.43%       
+1977       United Kingdom            14145             0.42%       
+1979           Israel                13974             0.42%       
+1978           Israel                13918             0.42%       
+1976 German Democratic Republic      13775             0.41%       
+1977 German Democratic Republic      13606             0.41%       
+1976       United Kingdom            12885             0.38%       
+1979           Egypt                 12764             0.38%       
+1978 German Democratic Republic      12733             0.38%       
+1978       United Kingdom            12630             0.38%       
+1979       United Kingdom            12605             0.38%       
+1975    Republic of Vietnam          12551             0.37%       
+1975 German Democratic Republic      12228             0.36%       
+1975           Japan                 12087             0.36%       
 -------------------------------------------------------------------
