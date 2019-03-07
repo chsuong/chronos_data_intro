@@ -1380,6 +1380,72 @@ htmlreg(list(fixed_rep_m,
 #unlink("texreg.doc")
 ```
 
+#Comparison of different diplomacy variables
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+#Re-connect to the database
+#driver = dbDriver("MySQL")
+#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+#mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
+
+table_us_dip_comp<-
+  us_dip_c_y %>%
+  filter(dip_rep_m==0 & dip_rep_a==0 & evt_n_c_y==0) %>% #Note that the variable dip_rep_m=0 for South Vietnam, which is inaccurate
+  arrange(desc(n_c_y)) %>%
+  top_n(n = 20, wt = n_c_y) 
+
+stargazer(table_us_dip_comp[c("year",
+                              "cow_statename",
+                               "n_c_y",
+                              "dip_rep_m",
+                              "dip_focus",
+                              "politicalappointee_year",
+                              "bi_PRE",
+                              "evt_n_c_y")],
+          type = "html", 
+          #flip = TRUE,
+          summary = FALSE,
+          rownames = FALSE,
+          title="Comparison of Variables on U.S. Diplomacy", 
+          digits=1, 
+          out="./data_analysis_output/us_dip_comp.html",
+          covariate.labels=c("Year", 
+                             "Country", 
+                             "Number of Cables Tagged",
+                             "U.S. Diplomatic Representation",
+                            "U.S. Diplomatic Focus",
+                            "U.S. Ambassador is a political appointee",
+                            "Number of U.S. Presidential Visits",
+                            "Number of U.S. Diplomatic Events")
+          )
+          
+stargazer(table_us_dip_comp[c("year",
+                              "cow_statename",
+                               "n_c_y",
+                              "dip_rep_m",
+                              "dip_focus",
+                              "politicalappointee_year",
+                              "bi_PRE",
+                              "evt_n_c_y")],
+          type = "text", 
+          #flip = TRUE,
+          summary = FALSE,
+          rownames = FALSE,
+          title="Comparison of Variables on U.S. Diplomacy", 
+          digits=1, 
+          out="./data_analysis_output/us_dip_comp.txt",
+          covariate.labels=c("Year", 
+                             "Country", 
+                             "Number of Cables Tagged",
+                             "U.S. Diplomatic Representation",
+                            "U.S. Diplomatic Focus",
+                            "U.S. Ambassador is a political appointee",
+                            "Number of U.S. Presidential Visits",
+                            "Number of U.S. Diplomatic Events")
+          )
+```
+
 ```{r, echo=FALSE}
 #Unestimatable or unused pglm models
 fixed_rep_a <- pglm(n_c_y~
