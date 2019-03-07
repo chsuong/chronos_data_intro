@@ -17,7 +17,6 @@ I created a html/rmarkdown file to explore the databases and to make Word-compat
 ##Sources for external datasets in the folder "external_data":
 
 * COW country codes (cow): http://www.correlatesofwar.org/data-sets/cow-country-codes/cow-country-codes/at_download/file
-* COW diplomatic representation (us_dip_rep_cow): http://www.correlatesofwar.org/data-sets/diplomatic-exchange
 * U.S. diplomatic representation (us_dip_rep_moyer; COW-compatible version): https://www.dropbox.com/sh/2wnklx04vblnmi1/AABmMxbxvja_JVStsxKD4F2Qa?dl=0
 ** Errors: The dataset by Arias and Smith 2018 seems more accurate about US diplomatic representation. This dataset misses the case of U.S. embassy in the Bahamas in 1973-75 wherease the latter includes it. The codebook is outdated and omits important information. It seems like the value 0 for the variable "Focus New" represents unreciprocated cases. 
 

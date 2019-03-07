@@ -1216,6 +1216,17 @@ stargazer(as.data.frame(us_dip_c_y)[c("year","cow_ccode",
                             "Number of U.S. Diplomatic Events"))
 ```  
 
+#Unbalanced panel
+```{r}
+nrow(us_dip_c_y[us_dip_c_y$year==1973,])
+nrow(us_dip_c_y[us_dip_c_y$year==1974,])
+nrow(us_dip_c_y[us_dip_c_y$year==1975,])
+nrow(us_dip_c_y[us_dip_c_y$year==1976,])
+nrow(us_dip_c_y[us_dip_c_y$year==1977,])
+nrow(us_dip_c_y[us_dip_c_y$year==1978,])
+nrow(us_dip_c_y[us_dip_c_y$year==1979,])
+```
+
 ##Correlation plots
 ```{r}
 DF<-us_dip_c_y[c("n_c_y","dip_focus","dip_rep_m",
@@ -1362,7 +1373,7 @@ htmlreg(list(fixed_rep_m,
                           "Number of U.S. Presidential Visits",
                           "Number of U.S. Diplomatic Events"),
     file = "./data_analysis_output/pgml_us_dip_c_y.html", 
-    caption = "Negative Binomial Regression of Tag Traffic (Unit: Country-Year)", 
+    caption = "Negative Binomial Regression of Tag Traffic with Fixed Effects (Unit: Country-Year)", 
     caption.above= TRUE,     
     inline.css = FALSE, doctype = TRUE, html.tag = TRUE, 
     head.tag = TRUE, body.tag = TRUE)
