@@ -1004,7 +1004,7 @@ us_dip_rep_moyer<-
 ```{r, echo=FALSE}
 #Examine some countries
 us_dip_rep_china<-
-  filter(us_dip_rep2, cow_ccode==710) %>%
+  filter(us_dip_rep_moyer, cow_ccode==710) %>%
   mutate(dip_rep=ifelse(`Embassy New`==6,1, NA))
 
 #Note that the dataset is inaccurately referring to South Vietnam as Vietnam.
@@ -1013,11 +1013,11 @@ us_dip_rep_china<-
 #  mutate(dip_rep=ifelse(`Embassy New`==6,1, NA))
 
 us_dip_rep_iran<-
-  filter(us_dip_rep2, cow_ccode==630) %>%
+  filter(us_dip_rep_moyer, cow_ccode==630) %>%
   mutate(dip_rep=ifelse(`Embassy New`==6,1, NA))
 
 us_dip_rep_afghan<-
-  filter(us_dip_rep2, cow_ccode==700) %>%
+  filter(us_dip_rep_moyer, cow_ccode==700) %>%
   mutate(dip_rep=ifelse(`Embassy New`==6,1, NA))
 
 #No diplomatic relations between the U.S. and (North) Vietnam until 1995
@@ -1059,7 +1059,6 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 #Save the dta file as a csv file
 #write.csv(read.dta("diplomatic_core.replication.dta"),"./external_data/lebovic_saunders_2016/diplomatic_core.replication.csv")
 
-
 us_dip_vis<-
   read_csv("./external_data/lebovic_saunders_2016/diplomatic_core.replication.csv") %>%
   dplyr::select(cowid, year, bi_PRE, bi_SOS) %>%#, mil_ratio, USmilaid, allies, USdefense, USdefense_EUR, UStrade, energypc, USalign, UNpart, mpower, term2, NIX, FOR, CAR, demo, bi_L1_PRE, EUR, AFR, MEA, SCA, EAP, bi_L14_SOS, bi_L14_PRE, bi_L58_SOS, bi_L58_PRE) %>%
@@ -1072,7 +1071,6 @@ us_dip_vis<-
 #Note that the paper (LEBOVIC AND SAUNDERS 2016) mentions the variable for crisis (Crisis Shocks from the International Crisis Behavior Project) but the dataset actually does not include it. The paper notes that "regularized patterns [of U.S. diplomatic visits] that we discern are not products of crisis diplomacy and that crises do not strongly affect the results" (p.119).
 #This dataset includes country code 818 but none of the COW country datasets include it. Drop the row with cow_ccode=818.
 #It also includes 0s for countries non-existent in the 1970s as a potential diplomatic partner (e.g. Croatia with country code 344 and Bosnia and Herzegovina with country code 346).
-
 ```
 
 ##Examine cables tagged with certain countries as a test
