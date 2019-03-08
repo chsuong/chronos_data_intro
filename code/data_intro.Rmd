@@ -970,10 +970,11 @@ iran_tag
 ```{r echo=FALSE}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-us_dip_rep_cow<-read_csv("./external_data/cow/Diplomatic_Exchange_2006v1.csv") %>%
-                filter(1972<year & year<1980)
-
-
+us_dip_rep_cow<-
+  read_csv("./external_data/cow/Diplomatic_Exchange_2006v1.csv") %>%
+  filter(1972<year & year<1980) %>%
+  filter(ccode1==2) %>%
+  dplyr::select("ccode2","year","DR_at_2","DE")
 ```
 
 ##Import and load the Moyer data for U.S. diplomatic representation
