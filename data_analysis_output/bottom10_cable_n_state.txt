@@ -1,5 +1,5 @@
 
-Non-U.S. Countries Least Frequently Tagged in Cables
+Non-US Countries Least Frequently Tagged in Cables
 ==================================================================
 Country                        Number of Cables Relative Frequency
 ------------------------------------------------------------------

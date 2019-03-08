@@ -1,7 +1,5 @@
 ##Links:
 
-- Outline: https://docs.google.com/document/d/1gajzoj5UhNc_McXDDJlpFQ5s8vqfFsLj$
-
 - Draft: https://docs.google.com/document/d/1Ve1iRiVqhL-jpKFY5x0dZGl_irYQpUeW_FmIMxlinK8/edit?usp=sharing
 
 - The original proposal: https://docs.google.com/document/d/1xgIa9FoH3dLcBQmw7xI5gBJ1wh55Bg_Vdtayo8Lzq78/edit#
