@@ -559,14 +559,14 @@ stargazer(as.data.frame(cable_n_states_70s_year)[c("year", "cow_ccode", "n_c_y")
 
 stargazer(as.data.frame(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,])[c("year", "cow_ccode", "n_c_y")], 
           type = "text", 
-          title="Summary Statistics of Tag Traffic by Country-Year (Only Existing Non-U.S. Countries)", 
+          title="Summary Statistics of Tag Traffic by Country-Year (Only Existing Non-US Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_nonus_states_70s_year.txt",
           covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country-Year"))
 
 stargazer(as.data.frame(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,])[c("year", "cow_ccode", "n_c_y")], 
           type = "html", 
-          title="Summary Statistics of Tag Traffic by Country-Year (Only Existing Non-U.S. Countries)", 
+          title="Summary Statistics of Tag Traffic by Country-Year (Only Existing Non-US Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_nonus_states_70s_year.html",
           covariate.labels=c("Year", "COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country-Year"))
@@ -603,14 +603,14 @@ stargazer(as.data.frame(cable_n_states_70s)[c("cow_ccode", "n_c")],
 
 stargazer(as.data.frame(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,])[c("cow_ccode", "n_c")], 
           type = "text", 
-          title="Summary Statistics of Tag Traffic by Country (Incl. Only Existing Non-U.S. Countries)", 
+          title="Summary Statistics of Tag Traffic by Country (Incl. Only Existing Non-US Countries)", 
           digits=1, 
           out="./data_analysis_output/desc_cable_n_nonus_states_70s.txt",
           covariate.labels=c("COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country"))
 
 stargazer(as.data.frame(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,])[c("cow_ccode", "n_c")],
           type = "html", 
-          title="Summary Statistics of Tag Traffic by Country (Incl. Only Existing Non-U.S. Countries)",
+          title="Summary Statistics of Tag Traffic by Country (Incl. Only Existing Non-US Countries)",
           digits=1, 
           out="./data_analysis_output/desc_cable_n_nonus_states_70s.html",
           covariate.labels=c("COW Codes of Countries Tagged in Cables", "Tag Traffic for Each Country"))
@@ -636,7 +636,7 @@ hist(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,]$n_c_y, # his
  prob = TRUE, # show densities instead of frequencies
  ylim = c(0, 0.0004),
  xlab = "Tag Traffic",
- main = "Existing Non-U.S. Country-Years")
+ main = "Existing Non-US Country-Years")
 lines(density(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,]$n_c_y), # density plot
  lwd = 2, # thickness of line
  col = "chocolate3")
@@ -647,7 +647,7 @@ hist(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c, # histogram
  #xlim = c(0, 20000), 
   ylim = c(0, 0.0001),
  xlab = "Tag Traffic",
- main = "Existing Non-U.S. Countries")
+ main = "Existing Non-US Countries")
 lines(density(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c), # density plot
  lwd = 2, # thickness of line
  col = "chocolate3")
@@ -684,7 +684,7 @@ lines(density(cable_n_states_70s_year$n_c_y), # density plot
 # prob = TRUE, # show densities instead of frequencies
 # ylim = c(0, 0.0004),
 # xlab = "Tag Traffic",
-# main = "Existing Non-U.S. Country-Years")
+# main = "Existing Non-US Country-Years")
 #lines(density(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,]$n_c_y), # density plot
 # lwd = 2, # thickness of line
 # col = "chocolate3")
@@ -723,7 +723,7 @@ lines(density(cable_n_states_70s$n_c), # density plot
 # #xlim = c(0, 20000), 
 #  ylim = c(0, 0.0001),
 # xlab = "Tag Traffic",
-# main = "Existing Non-U.S. Countries")
+# main = "Existing Non-US Countries")
 #lines(density(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,]$n_c), # density plot
 # lwd = 2, # thickness of line
 # col = "chocolate3")
@@ -746,7 +746,7 @@ stargazer(table_state_year_top20[c("year", "cow_statename", "n_c_y","rel.freq")]
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Non-U.S. Country-Years with Highest Tag Traffic", 
+          title="Non-US Country-Years with Highest Tag Traffic", 
           digits=1, 
           out="./data_analysis_output/top20_cable_n_state_year.txt",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
@@ -755,7 +755,7 @@ stargazer(table_state_year_top20[c("year", "cow_statename", "n_c_y","rel.freq")]
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Non-U.S. Country-Years with Highest Tag Traffic", 
+          title="Non-US Country-Years with Highest Tag Traffic", 
           digits=1, 
           out="./data_analysis_output/top20_cable_n_state_year.html",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
@@ -778,7 +778,7 @@ stargazer(table_state_year_bottom10[c("year", "cow_statename", "n_c_y","rel.freq
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Non-U.S. Country-Years with Lowest Tag Traffic", 
+          title="Non-US Country-Years with Lowest Tag Traffic", 
           digits=2, 
           out="./data_analysis_output/bottom10_cable_n_state_year.txt",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
@@ -787,7 +787,7 @@ stargazer(table_state_year_bottom10[c("year", "cow_statename", "n_c_y","rel.freq
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Non-U.S. Country-Years with Lowest Tag Traffic", 
+          title="Non-US Country-Years with Lowest Tag Traffic", 
           digits=2, 
           out="./data_analysis_output/bottom10_cable_n_state_year.html",
           covariate.labels=c("Year","Tagged Country", "Number of Cables", "Relative Frequency"))
@@ -814,7 +814,7 @@ stargazer(table_state_top20[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Non-U.S. Countries Most Frequently Tagged in Cables", 
+          title="Non-US Countries Most Frequently Tagged in Cables", 
           digits=1, 
           out="./data_analysis_output/top20_cable_n_state.txt",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
@@ -823,7 +823,7 @@ stargazer(table_state_top20[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Non-U.S. Countries Most Frequently Tagged in Cables", 
+          title="Non-US Countries Most Frequently Tagged in Cables", 
           digits=1, 
           out="./data_analysis_output/top20_cable_n_state.html",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
@@ -846,7 +846,7 @@ stargazer(table_state_bottom10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
-          title="Non-U.S. Countries Least Frequently Tagged in Cables", 
+          title="Non-US Countries Least Frequently Tagged in Cables", 
           digits=1, 
           out="./data_analysis_output/bottom10_cable_n_state.txt",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
@@ -855,7 +855,7 @@ stargazer(table_state_bottom10[c("cow_statename", "n_c","rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
-          title="Non-U.S. Countries Least Frequently Tagged in Cables", 
+          title="Non-US Countries Least Frequently Tagged in Cables", 
           digits=1, 
           out="./data_analysis_output/bottom10_cable_n_state.html",
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
@@ -933,7 +933,7 @@ stargazer(russia_tag_network,
           title="Comparison of Tag Traffic and Cable Traffic", 
           digits=1, 
           out="./data_analysis_output/russia_tag_network.html",
-          covariate.labels=c("Year", "Number of Cables Tagged<br>with the U.S.S.R.", "Number of Cables Sent by/to<br>the U.S. Embassy in Moscow")
+          covariate.labels=c("Year", "Number of Cables Tagged<br>with the USSR", "Number of Cables Sent by/to<br>the US Embassy in Moscow")
           )
   
 stargazer(russia_tag_network,
@@ -944,7 +944,7 @@ stargazer(russia_tag_network,
           title="Comparison of Tag Traffic and Cable Traffic", 
           digits=1, 
           out="./data_analysis_output/russia_tag_network.txt",
-          covariate.labels=c("Year", "Number of Cables Tagged with the U.S.S.R.", "Number of Cables Sent by/to the U.S. Embassy in Moscow")
+          covariate.labels=c("Year", "Number of Cables Tagged with the USSR", "Number of Cables Sent by/to the US Embassy in Moscow")
           )
 ```
 #Iran
@@ -1187,15 +1187,15 @@ stargazer(as.data.frame(us_dip_c_y)[c("year","cow_ccode",
                                       "bi_PRE", #"bi_SOS"
                                       "evt_n_c_y")], 
           type = "text", 
-          title="Summary Statistics of Variables on U.S. Diplomacy (Unit: Country-Year)", 
+          title="Summary Statistics of Variables on US Diplomacy (Unit: Country-Year)", 
           digits=1, 
           out="./data_analysis_output/desc_us_dip_states_70s_year.txt",
           covariate.labels=c("Year", "COW Country Codes", 
                              "Tag Traffic",
-                            "U.S. Diplomatic Representation","U.S. Diplomatic Focus",
-                            "U.S. Ambassador Is a Political Appointee",
-                            "Number of U.S. Presidential Visits",
-                            "Number of U.S. Diplomatic Events")
+                            "US Diplomatic Representation","US Diplomatic Focus",
+                            "US Ambassador Is a Political Appointee",
+                            "Number of US Presidential Visits",
+                            "Number of US Diplomatic Events")
           )
 
 stargazer(as.data.frame(us_dip_c_y)[c("year","cow_ccode",
@@ -1205,15 +1205,15 @@ stargazer(as.data.frame(us_dip_c_y)[c("year","cow_ccode",
                                       "bi_PRE"#, "bi_SOS"
                                       )],  
           type = "html", 
-          title="Summary Statistics of Variables on U.S. Diplomacy", 
+          title="Summary Statistics of Variables on US Diplomacy", 
           digits=1, 
           out="./data_analysis_output/desc_us_dip_states_70s_year.html",
           covariate.labels=c("Year", "COW Country Codes", 
                              "Tag Traffic",
-                            "U.S. Diplomatic Representation","U.S. Diplomatic Focus",
-                            "U.S. Ambassador Is a Political Appointee",
-                            "Number of U.S. Presidential Visits",
-                            "Number of U.S. Diplomatic Events"))
+                            "US Diplomatic Representation","US Diplomatic Focus",
+                            "US Ambassador Is a Political Appointee",
+                            "Number of US Presidential Visits",
+                            "Number of US Diplomatic Events"))
 ```  
 
 #Unbalanced panel
@@ -1367,11 +1367,11 @@ htmlreg(list(fixed_rep_m,
              fixed_vis1,
              fixed_evt), 
     custom.coef.names = c("(Intercept)", 
-                          "U.S. Diplomatic Representation",
-                          "U.S. Diplomatic Focus",
-                          "U.S. Ambassador is a political appointee",
-                          "Number of U.S. Presidential Visits",
-                          "Number of U.S. Diplomatic Events"),
+                          "US Diplomatic Representation",
+                          "US Diplomatic Focus",
+                          "US Ambassador is a political appointee",
+                          "Number of US Presidential Visits",
+                          "Number of US Diplomatic Events"),
     file = "./data_analysis_output/pgml_us_dip_c_y.html", 
     caption = "Negative Binomial Regression of Tag Traffic with Fixed Effects (Unit: Country-Year)", 
     caption.above= TRUE,     
@@ -1391,7 +1391,9 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 
 table_us_dip_comp<-
   us_dip_c_y %>%
-  filter(dip_rep_m==0 & dip_rep_a==0 & evt_n_c_y==0) %>% #Note that the variable dip_rep_m=0 for South Vietnam, which is inaccurate
+  filter(dip_rep_m==0 & dip_rep_a==0 
+         & evt_n_c_y==0
+         ) %>% #Note that the variable dip_rep_m=0 for South Vietnam, which is inaccurate
   arrange(desc(n_c_y)) %>%
   top_n(n = 20, wt = n_c_y) 
 
@@ -1407,17 +1409,17 @@ stargazer(table_us_dip_comp[c("year",
           #flip = TRUE,
           summary = FALSE,
           rownames = FALSE,
-          title="Comparison of Variables on U.S. Diplomacy", 
+          title="Comparison of Variables on US Diplomacy", 
           digits=1, 
           out="./data_analysis_output/us_dip_comp.html",
           covariate.labels=c("Year", 
                              "Country", 
                              "Number of Cables Tagged",
-                             "U.S. Diplomatic Representation",
-                            "U.S. Diplomatic Focus",
-                            "U.S. Ambassador is a political appointee",
-                            "Number of U.S. Presidential Visits",
-                            "Number of U.S. Diplomatic Events")
+                             "US Diplomatic Representation",
+                            "US Diplomatic Focus",
+                            "US Ambassador is a political appointee",
+                            "Number of US Presidential Visits",
+                            "Number of US Diplomatic Events")
           )
           
 stargazer(table_us_dip_comp[c("year",
@@ -1432,18 +1434,42 @@ stargazer(table_us_dip_comp[c("year",
           #flip = TRUE,
           summary = FALSE,
           rownames = FALSE,
-          title="Comparison of Variables on U.S. Diplomacy", 
+          title="Comparison of Variables on US Diplomacy", 
           digits=1, 
           out="./data_analysis_output/us_dip_comp.txt",
           covariate.labels=c("Year", 
                              "Country", 
                              "Number of Cables Tagged",
-                             "U.S. Diplomatic Representation",
-                            "U.S. Diplomatic Focus",
-                            "U.S. Ambassador is a political appointee",
-                            "Number of U.S. Presidential Visits",
-                            "Number of U.S. Diplomatic Events")
+                             "US Diplomatic Representation",
+                            "US Diplomatic Focus",
+                            "US Ambassador is a political appointee",
+                            "Number of US Presidential Visits",
+                            "Number of US Diplomatic Events")
           )
+
+#Cuba, North Korea, GDR, Iran
+
+troublemaker<-
+  us_dip_c_y %>%
+  filter(cow_statename=="Cuba" | 
+         cow_statename=="North Korea" |
+         cow_statename=="German Democratic Republic" |
+         cow_statename=="Iran")
+          
+png("./data_analysis_output/us_dip_comp_troublemaker.png", width = 800, height = 600)
+#layout(matrix(c(1:3), 3, 1,
+# byrow = TRUE))
+ggplot(troublemaker, aes(x = month2, y = sum_monthly)) + 
+  geom_line(aes(color = cow_statename), size = 1) +
+  labs(#title = "Tag Traffic of Key 10 Countries",
+           subtitle = "Data Plotted by Month",
+           y = "Tag Traffic Volume",
+           x = "Date") + 
+  theme_bw() +
+  theme(legend.title=element_blank(), 
+        legend.position = c(0, 1), 
+        legend.justification = c(0, 1))
+dev.off()
 ```
 
 ```{r, echo=FALSE}
