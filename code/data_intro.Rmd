@@ -48,7 +48,8 @@ library(pglm) #For negative binomial models for (unbalanced) panel data
 library(plm) #For linear regression models for (unbalanced) panel data
 library(rowr) #For cbind with fill
 library(texreg) #Tables for pglm models
-
+library(gtable) #Multiple graphs in one page
+ 
 #setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #If necessary, set as the working directory a location where you can save large data files with file size over 100 mb (github limitation).
 #Create a folder named "external_data" in the working directory
 ```
@@ -93,6 +94,8 @@ https://docs.google.com/document/d/13iM00ZfVzV-6mGw8YBGkJFnJFkLe011znb3LQenaIjM/
 ##External dataset sources:
 * Download the following datasets in the folder "external_data"
 * COW country codes (cow): http://www.correlatesofwar.org/data-sets/cow-country-codes/cow-country-codes/at_download/file
+* COW diplomatic exchange (us_dip_rep_cow):
+http://www.correlatesofwar.org/data-sets/diplomatic-exchange
 * U.S. diplomatic representation (us_dip_rep; COW-compatible version): https://www.dropbox.com/sh/2wnklx04vblnmi1/AABmMxbxvja_JVStsxKD4F2Qa?dl=0
 * U.S. diplomatic visits (us_dip_vis): https://tinyurl.com/yyedcahu
 * U.S. diplomatic appointments (us_dip_app): https://static-content.springer.com/esm/art%3A10.1007%2Fs11558-017-9277-0/MediaObjects/11558_2017_9277_MOESM1_ESM.zip
@@ -130,8 +133,7 @@ db_doc_no_date('declassification_cpdoc')
 ```{r}
 driver = dbDriver("MySQL")
 connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
-mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', 
-                                      dbname='declassification_cables')
+mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
 #cfpf_docs <- tbl(mydb,'docs') %>%
 #  collect()
@@ -340,7 +342,7 @@ country_code_tag<-
          tag_id=as.integer(tag_id)) %>%
   inner_join(all_states, by="cow_ccode") %>% #Include state names from the COW list of all states that have ever existed.
   rename(country_name=name) %>% 
-  filter(!is.na(cow_ccode) & !is.na(tag_id))%>% #Drop the observations with missing COW country code and missing tag_id.
+  filter(!is.na(cow_ccode) & !is.na(tag_id)) %>% #Drop the observations with missing COW country code and missing tag_id.
   dplyr::select(-iso3n) #Note the 2 tags for Vietnam.
 ```
 
@@ -1448,7 +1450,6 @@ stargazer(table_us_dip_comp[c("year",
           )
 
 #Cuba, North Korea, GDR, Iran
-
 troublemaker<-
   us_dip_c_y %>%
   filter(cow_statename=="Cuba" | 
@@ -1470,6 +1471,12 @@ ggplot(troublemaker, aes(x = month2, y = sum_monthly)) +
         legend.position = c(0, 1), 
         legend.justification = c(0, 1))
 dev.off()
+g2 <- ggplotGrob(p2)
+g3 <- ggplotGrob(p3)
+g <- rbind(g2, g3, size = "first")
+g$widths <- unit.pmax(g2$widths, g3$widths)
+grid.newpage()
+grid.draw(g)
 ```
 
 ```{r, echo=FALSE}
