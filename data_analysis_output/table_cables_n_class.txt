@@ -1,0 +1,11 @@
+
+Number of Documents By Classification Level
+===========================================================
+Classification       Number of Documents Relative Frequency
+-----------------------------------------------------------
+Secret                     127332               4.8%       
+Confidential               494823              18.64%      
+Unclassified               1518305             57.2%       
+Limited Official Use       513769              19.36%      
+Total                      2654229               -         
+-----------------------------------------------------------

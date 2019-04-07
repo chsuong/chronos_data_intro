@@ -3,14 +3,19 @@ title: "data_intro"
 author: "Clara Suong"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  pdf_document: default
-  toc: yes
+  pdf_document: 
+    toc: true # table of content true
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    #theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
 ---
+\newpage 
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
 knitr::opts_knit$set(root.dir = "/Users/clarahsuong/chronos_data_intro/")
-#setwd("/Users/clarahsuong/chronos_data_intro/")
 #knitr::opts_knit$set(root.dir=rprojroot::find_rstudio_root_file("/Users/clarahsuong/chronos_data_intro/"))
 #knitr::opts_knit$set(root.dir = normalizePath(".."))
 ```
@@ -26,9 +31,9 @@ library(tidyquant) # Loads tidyverse, tidquant, financial pkgs, xts/zoo
 library(xts) #Time series
 library(RMySQL) #For connecting to the databse
 library(htmlTable) #For creating Word-compatible tables
-library(Hmisc)
-library(expss) #For creating Word-compatible tables
-library(sjlabelled) #For creating Word-compatible tables from pglm models
+#library(Hmisc)
+#library(expss) #For creating Word-compatible tables
+#library(sjlabelled) #For creating Word-compatible tables from pglm models
 
 library(lubridate) #For temporal variables
 library(foreign)
@@ -49,7 +54,9 @@ library(plm) #For linear regression models for (unbalanced) panel data
 library(rowr) #For cbind with fill
 library(texreg) #Tables for pglm models
 library(gtable) #Multiple graphs in one page
- 
+library(janitor)
+#library(questionr)
+#library(questionr) #For freq.na command 
 #setwd("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro") #If necessary, set as the working directory a location where you can save large data files with file size over 100 mb (github limitation).
 #Create a folder named "external_data" in the working directory
 ```
@@ -66,7 +73,7 @@ library(gtable) #Multiple graphs in one page
 * declassification_cabinet
 * declassification_cpdoc
 
-##Key fields/variables in our database 'declassification_cables'
+##Key fields/variables in our database 'declassification_frus'
 * body
 * subject
 * date (year)
@@ -91,6 +98,26 @@ library(gtable) #Multiple graphs in one page
 * Cf. label dictionary: 
 https://docs.google.com/document/d/13iM00ZfVzV-6mGw8YBGkJFnJFkLe011znb3LQenaIjM/edit?usp=sharing 
 
+##Key fields/variables in our database 'declassification_cables'
+* body
+* subject
+* date (year)
+* classification
+* urgency
+* length
+* (handling)
+* (page_count)
+* (line_count)
+* office
+* from_field
+* to_field
+* tag
+
+* (Derived from TAGS below) 
+* country
+* person
+* topic
+
 ##External dataset sources:
 * Download the following datasets in the folder "external_data"
 * COW country codes (cow): http://www.correlatesofwar.org/data-sets/cow-country-codes/cow-country-codes/at_download/file
@@ -101,135 +128,529 @@ http://www.correlatesofwar.org/data-sets/diplomatic-exchange
 * U.S. diplomatic appointments (us_dip_app): https://static-content.springer.com/esm/art%3A10.1007%2Fs11558-017-9277-0/MediaObjects/11558_2017_9277_MOESM1_ESM.zip
 * U.S. diplomatic events (us_dip_evt): https://www.dropbox.com/sh/d93tdqanxugvlvg/AAByV97aMEE1Ydh0mkihigrSa?dl=0
 
-#Connecting to and exploring the databases
+#Connecting to and exploring the collections
 
-##Number of documents and date ranges for each collection
+##List the collections
+```{r}
+
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+#Re-connect to the database
+driver = dbDriver("MySQL")
+connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+dbGetQuery(connection, 'show databases;')
+```
+
+
+
+
+##Download the table "docs" for all databases
 ```{r}
 driver = dbDriver("MySQL")
 connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
 
-db_doc_no_date <- function(mydb) {
-  mydb2 = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', 
-                                      dbname=mydb)
+db_docs <- function(mydb) {
+  mydb2 = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname=mydb)
   docs<-tbl(mydb2, 'docs') %>% 
+    collect() %>%
+    distinct()
+  return(docs)
+}
+
+#db_docs('declassification_cables')
+#db_docs('declassification_frus')
+load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
+cables_docs<-docs
+load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/frus_docs.RData")
+clinton_docs<-db_docs('declassification_clinton') 
+pdb_docs<-db_docs('declassification_pdb')
+kissinger_docs<-db_docs('declassification_kissinger')
+ddrs_docs<-db_docs('declassification_ddrs')
+cabinet_docs<-db_docs('declassification_cabinet')
+cpdoc_docs<-db_docs('declassification_cpdoc')
+```
+
+##Number of documents and date ranges for each collection
+```{r}
+#driver = dbDriver("MySQL")
+#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+
+db_doc_no_date <- function(mydb) {
+#  mydb2 = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', 
+#                                      dbname=mydb)
+mydb2<-eval(parse(text=paste(mydb, sep = "")), env=.GlobalEnv)
+#docs<-tbl(mydb2, 'docs') %>% 
+mydb2<-mydb2  %>%
   select(id, date) %>%
   collect() %>%
   distinct()
   
-  return(c(mydb,nrow(docs), range(docs$date, na.rm = TRUE)))
+  return(c(nrow(mydb2), range(mydb2$date, na.rm = TRUE)))
 }
 
-#
-#db_doc_no_date('declassification_cables')
-db_doc_no_date('declassification_ddrs')
-db_doc_no_date('declassification_frus')
-db_doc_no_date('declassification_kissinger')
-db_doc_no_date('declassification_pdb')
-db_doc_no_date('declassification_clinton') 
-db_doc_no_date('declassification_cabinet')
-db_doc_no_date('declassification_cpdoc')
+db_doc_no_date('cables_docs')
+db_doc_no_date('frus_docs')
+db_doc_no_date('pdb_docs')
+db_doc_no_date('kissinger_docs')
+db_doc_no_date('clinton_docs') 
+db_doc_no_date('ddrs_docs')
+db_doc_no_date('cabinet_docs')
+db_doc_no_date('cpdoc_docs')
 ```
-#Frequency tables for declassification_cables
+
+##Frequency tables for full text vs. non-full text
 ```{r}
-driver = dbDriver("MySQL")
-connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
-mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
+
+sum(!is.na(cables_docs$body))  
+#sum(is.na(cables_docs$body[cables_docs$cable_type=="full"]))
+#sum(is.na(cables_docs$body[cables_docs$cable_type=="preel"]))
+#sum(is.na(cables_docs$body[cables_docs$cable_type=="preel_withdrawn"]))
+#sum(is.na(cables_docs$body[cables_docs$cable_type=="withdrawn"]))
+sum(!is.na(frus_docs$body))
+sum(!is.na(pdb_docs$body))
+sum(!is.na(kissinger_docs$body))
+sum(!is.na(clinton_docs$body))
+sum(is.na(ddrs_docs$body))
+sum(!is.na(cabinet_docs$body))
+sum(!is.na(cpdoc_docs$body))
+
+
+
+sum(sum(!is.na(cables_docs$body)),
+sum(!is.na(frus_docs$body)),
+sum(!is.na(pdb_docs$body)),
+sum(!is.na(kissinger_docs$body)),
+sum(!is.na(clinton_docs$body)),
+sum(is.na(ddrs_docs$body))#,
+#sum(!is.na(cabinet_docs$body)),
+#sum(!is.na(cpdoc_docs$body))
+)
+
+sum(sum(!is.na(cables_docs$body)),
+sum(!is.na(frus_docs$body)),
+sum(!is.na(pdb_docs$body)),
+sum(!is.na(kissinger_docs$body)),
+sum(!is.na(clinton_docs$body)),
+sum(is.na(ddrs_docs$body)),
+sum(!is.na(cabinet_docs$body)),
+sum(!is.na(cpdoc_docs$body))
+)
+
+sum(is.na(cables_docs$body))
+sum(is.na(frus_docs$body))
+sum(is.na(pdb_docs$body))
+sum(is.na(kissinger_docs$body))
+sum(is.na(clinton_docs$body))
+sum(!is.na(ddrs_docs$body))
+sum(is.na(cabinet_docs$body))
+sum(is.na(cpdoc_docs$body))
+
+sum(sum(is.na(cables_docs$body)),
+sum(is.na(frus_docs$body)),
+sum(is.na(pdb_docs$body)),
+sum(is.na(kissinger_docs$body)),
+sum(is.na(clinton_docs$body)),
+sum(!is.na(ddrs_docs$body))#,
+#sum(is.na(cabinet_docs$body)),
+#sum(is.na(cpdoc_docs$body))
+)
+
+sum(sum(is.na(cables_docs$body)),
+sum(is.na(frus_docs$body)),
+sum(is.na(pdb_docs$body)),
+sum(is.na(kissinger_docs$body)),
+sum(is.na(clinton_docs$body)),
+sum(!is.na(ddrs_docs$body)),
+sum(is.na(cabinet_docs$body)),
+sum(is.na(cpdoc_docs$body)))
+```
+
+#Frequency tables for declassification_frus
+##Number of Documents with Non-Missing Values by Variable
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+C1<-c("collection",
+      "id",
+      "body",
+      "date",
+      "classification",
+      "volume_id",
+      "chapt_title",
+      "title", 
+      #"subject",
+      #"location", 
+      "p_from",
+      "p_to",
+      "source"
+)
+  
+C2<-c(sum(!is.na(frus_docs$collection)),
+sum(!is.na(frus_docs$id)),
+sum(!is.na(frus_docs$body)),
+sum(!is.na(frus_docs$date)),
+sum(!is.na(frus_docs$classification)),
+sum(!is.na(frus_docs$volume_id)),
+sum(!is.na(frus_docs$chapt_title)),
+sum(!is.na(frus_docs$title)),
+sum(!is.na(frus_docs$p_from)),
+sum(!is.na(frus_docs$p_to)),
+sum(!is.na(frus_docs$source))
+)
+
+table_frus_n_na<-cbind(C1, C2)
+colnames(table_frus_n_na) <- c("Variable","Number of Documents with Non-Missing Values")
+
+#htmlTable(ns,  
+#          ctable=c("solid", "double"),
+#          caption="Number of Documents with Non-Missing Values")
+
+stargazer(table_frus_n_na,
+          summary = FALSE,
+          rownames = FALSE,
+          type = "text", 
+          title="Number of Documents with Non-Missing Values by Variable", 
+          digits=1, 
+          out="./data_analysis_output/table_frus_n_na.txt"
+          )
+
+stargazer(table_frus_n_na,
+          summary = FALSE,
+          rownames = FALSE,
+          type = "html", 
+          title="Number of Documents with Non-Missing Values by Variable", 
+          digits=1, 
+          out="./data_analysis_output/table_frus_n_na.html"
+          )
+```
+
+##Number of Documents by Year
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+table_frus_n_year<-
+  frus_docs %>%
+  mutate(year=lubridate::year(date)) %>%
+  group_by(year) %>%
+  tally() %>%
+  mutate(total_n = sum(n),
+        rel.freq = paste0(round(100 * n/total_n, 2), "%")) %>%
+  ungroup() %>% 
+  adorn_totals("row")
+
+stargazer(table_frus_n_year[c("year","n", "rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "text", 
+          title="Number of Documents By Year", 
+          digits=1, 
+          out="./data_analysis_output/table_frus_n_year.txt",
+          covariate.labels=c("Year","Number of Documents", "Relative Frequency")
+          )
+
+stargazer(table_frus_n_year[c("year","n", "rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "html", 
+          title="Number of Documents By Year", 
+          digits=1, 
+          out="./data_analysis_output/table_frus_n_year.html",
+          covariate.labels=c("Year","Number of Documents", "Relative Frequency")
+          )
+```
+##Number of frus documents by year
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+frus_n_date<-
+  frus_docs %>%
+  dplyr::select(id, date, classification) %>%
+  mutate(date=as_date(date), 
+         Classification = replace_na(classification, "Missing"),
+         year = as_date(cut(date, breaks = "year")))
+
+png("./data_analysis_output/frus_n_year.png", width = 600, height = 450)
+#layout(matrix(c(1:3), 3, 1,
+# byrow = TRUE))
+ggplot(frus_n_date, aes(year)) + 
+  #geom_bar()
+  geom_bar(aes(fill=Classification)) +
+  scale_x_date(breaks=scales::pretty_breaks(10)) +
+  scale_y_continuous(breaks=scales::pretty_breaks(10)) +
+  labs(#title = "",
+          #subtitle = "Data Plotted by Year",
+           y = "Number of Documents",
+           x = "Year") + 
+  scale_fill_grey() +
+  theme_bw() +
+  theme(text = element_text(size=15),
+        axis.text.x = element_text(size=11), 
+        axis.text.y = element_text(size=11), 
+        #legend.title=element_blank(), 
+        legend.position = c(0.1, 0.9), 
+        legend.justification = c(0.1, 0.9))
+dev.off()
+```
+
+##Number of Documents by Classification
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+table_frus_n_class<-
+  frus_docs %>%
+  mutate(year=lubridate::year(date)) %>%
+  group_by(classification) %>%
+  tally() %>%
+  mutate(total_n = sum(n),
+        rel.freq = paste0(round(100 * n/total_n, 2), "%")) %>%
+  ungroup() %>% 
+  adorn_totals("row")
+
+stargazer(table_frus_n_class[c("classification","n", "rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "text", 
+          title="Number of Documents By Classification Level", 
+          digits=1, 
+          out="./data_analysis_output/table_frus_n_class.txt",
+          covariate.labels=c("Classification","Number of Documents", "Relative Frequency"))
+
+stargazer(table_frus_n_class[c("classification","n", "rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "html", 
+          title="Number of Documents By Classification Level", 
+          digits=1, 
+          out="./data_analysis_output/table_frus_n_class.html",
+          covariate.labels=c("Classification","Number of Documents", "Relative Frequency"))
+```
+
+
+#Frequency tables for declassification_cables
+##Number of Documents with Non-Missing Values by Variable
+```{r}
+#driver = dbDriver("MySQL")
+#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+#mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
 #cfpf_docs <- tbl(mydb,'docs') %>%
 #  collect()
 #save("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
-load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
+#load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
 #Variables: subject; body; date; classification; from; to; tags; concepts; office
-
+#cables_docs<-docs
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 docs<-
-  docs %>%
-  dplyr::select("subject", 
-                "body", 
-                "date", 
-                "classification", 
+  cables_docs %>%
+  dplyr::select("collection",
+      "id",
+      "body",
+      "date",
+      "classification",
+        "subject", 
                 "from_field", 
                 "to_field", 
                 #"tags", 
                 "concepts", 
                 "office", 
-                "handling") #%>%
+                "handling", 
+                "type") #%>%
   #mutate_each_(funs(factor),c("subject", "body", "date", "classification", "from_field", "to_field", 
   #              #"tags", 
   #              "concepts", "office", "handling"))
 
-C1<-c("subject", 
-      "body", 
-      "date", 
+C1<-c("collection",
+      "id",
+      "body",
+      "date",
+      "classification",
+      "subject", 
       "from_field", 
       "to_field", 
+      #"tags", 
       "concepts", 
-      "office")
+      "office", 
+      "handling", 
+      "type")
   
-C2<-c(sum(!is.na(docs$subject)),
+C2<-c(
+sum(!is.na(docs$collection)),
+sum(!is.na(docs$id)),
 sum(!is.na(docs$body)),
 sum(!is.na(docs$date)),
+sum(!is.na(docs$classification)),
+sum(!is.na(docs$subject)),
 sum(!is.na(docs$from_field)),
 sum(!is.na(docs$to_field)),
 sum(!is.na(docs$concepts)),
-sum(!is.na(docs$office)))
+sum(!is.na(docs$office)),
+sum(!is.na(docs$type))
+)
 
-ns<-cbind(C1, C2)
-colnames(ns) <- c("Variable","N")
+table_cables_n_na<-cbind(C1, C2)
+colnames(table_cables_n_na) <- c("Variable","Number of Documents with Non-Missing Values")
 
-htmlTable(ns,  
-          ctable=c("solid", "double"),
-          caption="Number of Cables with Non-Missing Values")
+#htmlTable(ns,  
+#          ctable=c("solid", "double"),
+#          caption="Number of Documents with Non-Missing Values")
 
-#Number of Cables by Year
-table_cable_n_year<-
-  docs %>%
+stargazer(table_cables_n_na,
+          summary = FALSE,
+          rownames = FALSE,
+          type = "text", 
+          title="Number of Documents with Non-Missing Values by Variable", 
+          digits=1, 
+          out="./data_analysis_output/table_cables_n_na.txt"
+          )
+
+stargazer(table_cables_n_na,
+          summary = FALSE,
+          rownames = FALSE,
+          type = "html", 
+          title="Number of Documents with Non-Missing Values by Variable", 
+          digits=1, 
+          out="./data_analysis_output/table_cablse_n_na.html"
+          )
+```
+
+##Number of Cables by Year
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+table_cables_n_year<-
+  cables_docs %>%
   mutate(year=lubridate::year(date)) %>%
   group_by(year) %>%
   tally() %>%
   mutate(total_n = sum(n),
-        rel.freq = paste0(round(100 * n/total_n, 2), "%")) 
+        rel.freq = paste0(round(100 * n/total_n, 2), "%")) %>%
+  select(year, n, rel.freq) %>%
+  adorn_totals("row")
 
-stargazer(table_cable_n_year[c("year","n", "rel.freq")],
+
+stargazer(table_cables_n_year[c("year","n", "rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "text", 
           title="Number of Cables By Year", 
           digits=1, 
-          out="./data_analysis_output/table_cable_n_year.txt",
+          out="./data_analysis_output/table_cables_n_year.txt",
           covariate.labels=c("Year","Number of Cables", "Relative Frequency")
           )
 
-stargazer(table_cable_n_year[c("year","n", "rel.freq")],
+stargazer(table_cables_n_year[c("year","n", "rel.freq")],
           summary = FALSE,
           rownames = FALSE,
           type = "html", 
           title="Number of Cables By Year", 
           digits=1, 
-          out="./data_analysis_output/table_cable_n_year.html",
+          out="./data_analysis_output/table_cables_n_year.html",
           covariate.labels=c("Year","Number of Cables", "Relative Frequency")
           )
+```
 
 #Number of Cables by Classification
-classification_doc <- tbl(mydb,'classification_doc') %>%
-  collect()
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
 
-classification_doc=apply_labels(classification_doc,
-                                classification_id="Classification",
-                                classification_id=num_lab("1 Secret
-                                                          2 Confidential
-                                                          7 Limited Official Use
-                                                          5 Unclassified")#,
-                                #n="Number of Documents",
-                                #rel_freq="Proportion"
-                                )
+#driver = dbDriver("MySQL")
+#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+cables_db = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
-table_classification = fre(classification_doc$classification_id) %>% 
-  set_caption("Table: Documents by Classification") %>%
-  htmlTable()
+classification_doc2 <- tbl(cables_db,'classification_doc') %>%
+  collect() %>%
+  distinct() %>%
+  group_by(classification_id) %>% 
+  tally() %>% 
+  ungroup() %>% 
+  mutate(total_n = sum(n),
+        rel.freq = paste0(round(100 * n/total_n, 2), "%"),
+        classification=ifelse(classification_id==1,"Secret",
+                              ifelse(classification_id==2,"Confidential", 
+                                     ifelse(classification_id==5,"Unclassified",
+                                            ifelse(classification_id==7,"Limited Official Use", NA)
+                                            )
+                                    )
+                              )
+        ) %>%
+  select(classification, n, rel.freq) %>%
+  adorn_totals("row")
 
-table_classification
+#classification_doc=apply_labels(classification_doc,
+#                                classification_id="Classification",
+#                                classification_id=num_lab("1 Secret
+#                                                          2 Confidential
+#                                                          7 Limited Official Use
+#                                                          5 Unclassified")
+#                                )
+
+#table_classification = fre(classification_doc$classification_id) %>% 
+#  set_caption("Table: Documents by Classification") %>%
+#  htmlTable()
+
+stargazer(classification_doc2[c("classification","n", "rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "text", 
+          title="Number of Documents By Classification Level", 
+          digits=1, 
+          out="./data_analysis_output/table_cables_n_class.txt",
+          covariate.labels=c("Classification","Number of Documents", "Relative Frequency"))
+
+stargazer(classification_doc2[c("classification","n", "rel.freq")],
+          summary = FALSE,
+          rownames = FALSE,
+          type = "html", 
+          title="Number of Documents By Classification Level", 
+          digits=1, 
+          out="./data_analysis_output/table_cables_n_class.html",
+          covariate.labels=c("Classification","Number of Documents", "Relative Frequency"))
+
+```
+##Bar graph by month and classification
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+#driver = dbDriver("MySQL")
+#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+cables_db = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
+
+classification_doc3 <- tbl(cables_db,'classification_doc') %>%
+  collect() %>%
+  distinct() %>%
+  mutate(
+    date=as_date(date), 
+    month = as_date(cut(date, breaks = "month")),
+    classification=ifelse(classification_id==1,"Secret",
+                              ifelse(classification_id==2,"Confidential", 
+                                     ifelse(classification_id==5,"Unclassified",
+                                            ifelse(classification_id==7,"Limited Official Use", NA)
+                                            )
+                                    )
+                              )
+        ) %>%
+  select(classification, month) 
+
+png("./data_analysis_output/table_cables_n_month_class.png", width = 600, height = 450)
+ggplot(classification_doc3, aes(month)) + 
+  geom_bar(aes(fill=classification)) +
+  scale_x_date(breaks=scales::pretty_breaks(10)) +
+  scale_y_continuous(breaks=scales::pretty_breaks(10)) +
+  labs(#title = "",
+          #subtitle = "Data Plotted by Year",
+           y = "Number of Documents",
+           x = "Month") + 
+  scale_fill_grey() +
+  theme_bw() +
+  theme(text = element_text(size=15),
+        axis.text.x = element_text(size=11), 
+        axis.text.y = element_text(size=11), 
+        legend.title=element_blank()#, 
+        #legend.position = c(0.1, 0.9), 
+        #legend.justification = c(0.1, 0.9)
+        )
+dev.off()
 ```
 
 #Examine the different country codes across datasets
@@ -238,8 +659,8 @@ table_classification
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 #Re-connect to the database
-driver = dbDriver("MySQL")
-connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+#driver = dbDriver("MySQL")
+#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
 mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
 #A list of countries according to our database
@@ -383,7 +804,7 @@ country_tag_doc2<-
          date=lubridate::ymd(date), 
          ym=as.yearmon(paste(year, month),"%Y %m")
          ) 
-save(country_tag_doc2, file = "./data/country_tag_doc2.RData")
+#save(country_tag_doc2, file = "./data/country_tag_doc2.RData")
 #load("./data/country_tag_doc2.RData")
 
 cable_n_country_day<-
@@ -395,7 +816,7 @@ cable_n_country_day<-
                    "date")) %>%
   tally() %>%
   ungroup()
-save(cable_n_country_day, file = "./data/cable_n_country_day.RData")
+#save(cable_n_country_day, file = "./data/cable_n_country_day.RData")
 #load("./data/cable_n_country_day.RData") #Note that this includes neither all dates nor all countries on the COW list.
 
 #The table country_doc attempts to add West Germany and South Vietnam based on regex matching in body.
@@ -417,7 +838,7 @@ cable_n_all_states_year<-
   ungroup() %>%
   mutate(total_n = sum(n_c_y)) %>%
   arrange(year, cow_ccode)
-save(cable_n_all_states_year, file = "./data/cable_n_all_states_year.RData")
+#save(cable_n_all_states_year, file = "./data/cable_n_all_states_year.RData")
 #load("./data/cable_n_all_states_year.RData")
 
 #Tag traffic by state, including 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
@@ -431,7 +852,7 @@ cable_n_all_states<-
   ungroup() %>%
   mutate(total_n = sum(n_c)) %>%
   arrange(desc(n_c))
-save(cable_n_all_states, file = "./data/cable_n_all_states.RData")
+#save(cable_n_all_states, file = "./data/cable_n_all_states.RData")
 #load("./data/cable_n_all_states.RData")
 
 #Yearly tag traffic by state-year, excluding 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
@@ -445,7 +866,7 @@ cable_n_states_70s_year<-
   ungroup() %>%
   mutate(total_n = sum(n_c_y)) %>%
   arrange(year, cow_ccode)
-save(cable_n_states_70s_year, file = "./data/cable_n_states_70s_year.RData")
+#save(cable_n_states_70s_year, file = "./data/cable_n_states_70s_year.RData")
 #load("./data/cable_n_states_70s_year.RData")
 
 #Tag traffic by state, excluding 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
@@ -459,7 +880,7 @@ cable_n_states_70s<-
   ungroup() %>%
   mutate(total_n = sum(n_c)) %>%
   arrange(desc(n_c))
-save(states_70s, file = "./data/cable_n_states_70s.RData")
+#save(states_70s, file = "./data/cable_n_states_70s.RData")
 #load("./data/cable_n_states_70s.RData")
 
 #Note that the total ns for each dataset for differs a bit because: cable_n_states_70s and cable_n_states_70s_year look at only existing countries? or missing values?
@@ -863,9 +1284,9 @@ stargazer(table_state_bottom10[c("cow_statename", "n_c","rel.freq")],
           covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
 ```
 
-##Plot of tag traffic of 10 countries
+##Plot of tag traffic of top countries
+###Line graph
 ```{r}
-
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 coi_10_list<-table_state_top20$cow_ccode[1:10]
@@ -881,24 +1302,63 @@ coi_10<-
   summarise(sum_monthly = sum(n)) %>%
   ungroup() %>%
   mutate(month2 = as.Date(paste0(year,"-", month,"-01"),"%Y-%m-%d")) %>%
-  mutate(cow_statename= replace(cow_statename, cow_statename=="Russia", "Soviet Union")) #Replace "Russia" with "Soviet Union"
+  mutate(cow_statename= replace(cow_statename, cow_statename=="Russia", "Soviet Union"), #Replace "Russia" with "Soviet Union"
+        cow_statename= replace(cow_statename, cow_statename=="German Democratic Republic", "East Germany"))
 
-png("./data_analysis_output/key10.png", width = 800, height = 600)
-#layout(matrix(c(1:3), 3, 1,
-# byrow = TRUE))
+png("./data_analysis_output/key10.png", width = 600, height = 450)
 ggplot(coi_10, aes(x = month2, y = sum_monthly)) + 
-  geom_line(aes(color = cow_statename), size = 1) +
-  labs(#title = "Tag Traffic of Key 10 Countries",
-           subtitle = "Data Plotted by Month",
-           y = "Tag Traffic Volume",
-           x = "Date") + 
+  geom_line(aes(linetype = cow_statename), size = 1) +
+  scale_x_date(breaks=scales::pretty_breaks(10)) +
+  scale_y_continuous(breaks=scales::pretty_breaks(10)) +
+  labs(y = "Country Tag Traffic Volume",
+       x = "Month") + 
+  scale_fill_grey() +
   theme_bw() +
-  theme(legend.title=element_blank(), 
-        legend.position = c(0, 1), 
-        legend.justification = c(0, 1))
+  theme(text = element_text(size=15),
+        axis.text.x = element_text(size=11), 
+        axis.text.y = element_text(size=11), 
+        legend.title=element_blank(), 
+        legend.position = c(0.95, 0.05), 
+        legend.justification = c(0.95, 0.05)
+        )
 dev.off()
 ```
-#Country tag traffic vs. cable traffic
+
+###Bar graph
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+coi_5_list<-table_state_top20$cow_ccode[1:5]
+
+coi_5<-
+  country_tag_doc2  %>%
+  filter(cow_ccode %in% coi_5_list) %>%
+  mutate(cow_statename= replace(cow_statename, cow_statename=="Russia", "Soviet Union"),
+         cow_statename= replace(cow_statename, cow_statename=="German Democratic Republic", "East Germany"), 
+        #cow_statename2=ifelse(cow_ccode %in% coi_5_list, cow_statename, "Other"),
+        date=as_date(date),          
+        month = as_date(cut(date, breaks = "month")))
+
+png("./data_analysis_output/key5.png", width = 600, height = 450)
+ggplot(coi_5, aes(month)) + 
+  geom_bar(aes(fill=cow_statename)) +
+  scale_x_date(breaks=scales::pretty_breaks(10)) +
+  scale_y_continuous(breaks=scales::pretty_breaks(10)) +
+  labs(y = "Country Tag Traffic Volume",
+       x = "Month") + 
+  scale_fill_grey() +
+  theme_bw() +
+  theme(text = element_text(size=15),
+        axis.text.x = element_text(size=11), 
+        axis.text.y = element_text(size=11), 
+        legend.title=element_blank()#, 
+        #legend.position = c(0.95, 0.05), 
+        #legend.justification = c(0.95, 0.05)
+        )
+dev.off()
+```
+
+###Country tag traffic vs. cable traffic
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 

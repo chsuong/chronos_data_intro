@@ -1,0 +1,18 @@
+
+Number of Documents with Non-Missing Values by Variable
+==========================================================
+Variable       Number of Documents with Non-Missing Values
+----------------------------------------------------------
+collection                       3214293                  
+id                               3214293                  
+body                             2654414                  
+date                             3214293                  
+classification                   2654414                  
+subject                          2876678                  
+from_field                       3214094                  
+to_field                         3213050                  
+concepts                         3063262                  
+office                           2654414                  
+handling                         2654414                  
+type                             3214293                  
+----------------------------------------------------------

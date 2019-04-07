@@ -1,0 +1,17 @@
+
+Number of Documents with Non-Missing Values by Variable
+==========================================================
+Variable       Number of Documents with Non-Missing Values
+----------------------------------------------------------
+collection                       209046                   
+id                               209046                   
+body                             209046                   
+date                             186279                   
+classification                    52580                   
+volume_id                        209046                   
+chapt_title                      178050                   
+title                            209034                   
+p_from                            97657                   
+p_to                              51797                   
+source                            59028                   
+----------------------------------------------------------

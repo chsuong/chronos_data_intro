@@ -1,0 +1,11 @@
+
+Number of Documents By Classification Level
+=====================================================
+Classification Number of Documents Relative Frequency
+-----------------------------------------------------
+                     156466              74.85%      
+Confidential          13512              6.46%       
+Secret                29937              14.32%      
+Top Secret            9131               4.37%       
+Total                209046                -         
+-----------------------------------------------------
