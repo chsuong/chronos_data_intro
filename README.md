@@ -2,6 +2,8 @@
 
 - Draft: https://docs.google.com/document/d/1Ve1iRiVqhL-jpKFY5x0dZGl_irYQpUeW_FmIMxlinK8/edit?usp=sharing
 
+- Acknowledgement: https://docs.google.com/document/d/1jLFf_z5skf4Rdn1SEIHy0kCT5XLDVHqbRoq_EQx5048/edit?usp=sharing
+
 - The original proposal: https://docs.google.com/document/d/1xgIa9FoH3dLcBQmw7xI5gBJ1wh55Bg_Vdtayo8Lzq78/edit#
 
 - A summary/commentary of data introduction papers: https://docs.google.com/document/d/116FIdxxrGXxwO-AweaXaL6Kng_tmcYR8KOgpqBzBOOU/edit?usp=sharing
