@@ -146,8 +146,8 @@ dbGetQuery(connection, 'show databases;')
 
 ##Download the table "docs" for all databases
 ```{r}
-driver = dbDriver("MySQL")
-connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+#driver = dbDriver("MySQL")
+#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
 
 db_docs <- function(mydb) {
   mydb2 = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname=mydb)
@@ -161,7 +161,8 @@ db_docs <- function(mydb) {
 #db_docs('declassification_frus')
 load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
 cables_docs<-docs
-load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/frus_docs.RData")
+#load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/frus_docs.RData")
+frus_docs<-db_docs('declassification_frus') 
 clinton_docs<-db_docs('declassification_clinton') 
 pdb_docs<-db_docs('declassification_pdb')
 kissinger_docs<-db_docs('declassification_kissinger')
@@ -263,6 +264,55 @@ sum(is.na(clinton_docs$body)),
 sum(!is.na(ddrs_docs$body)),
 sum(is.na(cabinet_docs$body)),
 sum(is.na(cpdoc_docs$body)))
+```
+#An example document from declassification_cables
+```{r}
+#driver = dbDriver("MySQL")
+#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+cables_db = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
+
+dbListTables(cables_db)
+
+tbl(cables_db,'tag_doc') %>%
+  filter(doc_id=="1976BAGHDA01815")
+
+tbl(cables_db,'tags') %>%
+  filter(id==117 | id==118 | id==441)
+
+tbl(cables_db,'country_doc') %>%
+  filter(doc_id=="1976BAGHDA01815")
+
+tbl(cables_db,'countries') %>%
+  filter(id==368)
+
+tbl(cables_db,'topic_doc') %>%
+  filter(doc_id=="1976BAGHDA01815")
+
+tbl(cables_db,'topics') %>%
+  filter(id==31 | id==15 | id==0)
+```
+#An example document from declassification_frus
+```{r}
+driver = dbDriver("MySQL")
+connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+frus_db = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_frus')
+
+dbListTables(frus_db)
+
+tbl(frus_db,'country_doc') %>%
+  filter(doc_id=="frus1945v02d128")
+
+tbl(frus_db,'countries') %>%
+  filter(id==156 | id==250)
+
+tbl(frus_db,'topic_doc') %>%
+  filter(doc_id=="frus1945v02d128")
+
+tbl(frus_db,'topics') %>% #Replace with 'curated_topics' later.
+  filter(id==1059 | id==1062 | id==1069)
+
+a<-frus_docs %>%
+  filter(id=="frus1945v02d128") 
 ```
 
 #Frequency tables for declassification_frus
@@ -1408,6 +1458,7 @@ stargazer(russia_tag_network,
           covariate.labels=c("Year", "Number of Cables Tagged with the USSR", "Number of Cables Sent by/to the US Embassy in Moscow")
           )
 ```
+
 #Iran
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
@@ -1423,6 +1474,139 @@ iran_tag<-
 
 iran_tag
 ```
+
+#Country TAG Traffic vs. Total Population
+```{r}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+pop_c_y<-
+  read_csv("./external_data/NMC_5_0/NMC_5_0.csv") %>%
+  dplyr::select("stateabb", "ccode", "year","tpop") %>%
+  left_join(cable_n_states_70s_year, by = c("year"="year","ccode" = "cow_ccode", "stateabb"="cow_stateabb")) %>%
+  filter(1972<year & year<1980) %>%
+  mutate(tpop=1000*tpop)
+
+pop_c<-
+  read_csv("./external_data/NMC_5_0/NMC_5_0.csv") %>%
+  dplyr::select("stateabb", "ccode", "year","tpop") %>%
+  filter(1972<year & year<1980) %>%
+  mutate(tpop=1000*tpop) %>%
+  groupby(ccode) %>%
+  mean_pop 
+  left_join(cable_n_states_70s_year, by = c("year"="year","ccode" = "cow_ccode", "stateabb"="cow_stateabb")) %>%
+```
+
+#Unbalanced panel
+```{r}
+nrow(pop_c_y[pop_c_y$year==1973,])
+nrow(pop_c_y[pop_c_y$year==1974,])
+nrow(pop_c_y[pop_c_y$year==1975,])
+nrow(pop_c_y[pop_c_y$year==1976,])
+nrow(pop_c_y[pop_c_y$year==1977,])
+nrow(pop_c_y[pop_c_y$year==1978,])
+nrow(pop_c_y[pop_c_y$year==1979,])
+```
+
+##Correlation plots
+```{r}
+DF<-pop_c_y[c("n_c_y","tpop")]
+M<-cor(DF, use = "complete.obs")
+M
+corrplot(M, method = "ellipse")
+#corrplot.mixed(M)
+
+res1 <- cor.mtest(DF, conf.level = .95)
+res2 <- cor.mtest(DF, conf.level = .99)
+
+corrplot(M, p.mat = res1$p, sig.level = .05)
+```
+
+#Negative binomial models with fixed effects for unbalanced panel
+```{r, results='asis', warning=FALSE,message=FALSE}
+setwd("/Users/clarahsuong/chronos_data_intro")
+
+#coef_test(fixed_rep_a, vcov = "CR1", cluster = "individual", test = "naive-t")
+
+fixed_rep_m <- pglm(n_c_y~
+                   dip_rep_m#+
+                   #dip_focus+
+                   #dip_rep_a+
+                   #politicalappointee_year+
+                   #performanceMU_year+
+                   #bi_PRE+
+                   #bi_SOS+
+                   #evt_n_c_y
+               ,
+               data=us_dip_c_y, 
+               index=c("cow_ccode", "year"), 
+               family = negbin, 
+              effect = "twoways",
+               model="within", 
+               method = "nr",
+               print.level = 0
+              )
+m_rep_m=summary(fixed_rep_m)
+m_rep_m
+
+htmlreg(list(fixed_rep_m, 
+             fixed_rep_m2,
+             fixed_rep_app, 
+             fixed_vis1,
+             fixed_evt), 
+    custom.coef.names = c("(Intercept)", 
+                          "US Diplomatic Representation",
+                          "US Diplomatic Focus",
+                          "US Ambassador is a political appointee",
+                          "Number of US Presidential Visits",
+                          "Number of US Diplomatic Events"),
+    file = "./data_analysis_output/pgml_us_dip_c_y.html", 
+    caption = "Negative Binomial Regression of Tag Traffic with Fixed Effects (Unit: Country-Year)", 
+    caption.above= TRUE,     
+    inline.css = FALSE, doctype = TRUE, html.tag = TRUE, 
+    head.tag = TRUE, body.tag = TRUE)
+#unlink("texreg.doc")
+
+table_us_dip_comp<-
+  us_dip_c_y %>%
+  filter(dip_rep_m==0 & dip_rep_a==0 
+         & evt_n_c_y==0
+         ) %>% #Note that the variable dip_rep_m=0 for South Vietnam, which is inaccurate
+  arrange(desc(n_c_y)) %>%
+  top_n(n = 20, wt = n_c_y) 
+
+stargazer(table_us_dip_comp[c("year",
+                              "cow_statename",
+                               "n_c_y",
+                              "dip_rep_m",
+                              "dip_focus",
+                              "politicalappointee_year",
+                              "bi_PRE",
+                              "evt_n_c_y")],
+          type = "html", 
+          #flip = TRUE,
+          summary = FALSE,
+          rownames = FALSE,
+          title="Comparison of Variables on US Diplomacy", 
+          digits=1, 
+          out="./data_analysis_output/us_dip_comp.html",
+          covariate.labels=c("Year", 
+                             "Country", 
+                             "Number of Cables Tagged",
+                             "US Diplomatic Representation",
+                            "US Diplomatic Focus",
+                            "US Ambassador is a political appointee",
+                            "Number of US Presidential Visits",
+                            "Number of US Diplomatic Events")
+          )
+
+table_cable_n_tpop_state_year_top20<- 
+  pop_c_y %>%
+  filter(cow_ccode!=2) %>%
+  mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 2), "%")) %>%
+  arrange(desc(n_c_y)) %>%
+  top_n(n = 20, wt = n_c_y)
+```
+
 
 #U.S. diplomatic representation
 
