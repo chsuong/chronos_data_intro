@@ -417,7 +417,18 @@ frus_n_date<-
   dplyr::select(id, date, classification) %>%
   mutate(date=as_date(date), 
          Classification = replace_na(classification, "Missing"),
-         year = as_date(cut(date, breaks = "year")))
+         year = as_date(cut(date, breaks = "year")),
+         Classification =factor(Classification, levels = c("Missing", "Confidential","Secret","Top Secret")))
+
+#cols <- c(
+#          #"Confidential" =  
+#            "#999999", 
+#          #"Missing" = 
+#            "#CCCCCC", 
+#          #"Secret" = 
+#          "#666666", 
+#          #"Top Secret" = 
+#          "#333333")
 
 png("./data_analysis_output/frus_n_year.png", width = 600, height = 450)
 #layout(matrix(c(1:3), 3, 1,
@@ -431,14 +442,20 @@ ggplot(frus_n_date, aes(year)) +
           #subtitle = "Data Plotted by Year",
            y = "Number of Documents",
            x = "Year") + 
-  scale_fill_grey() +
+#  scale_fill_manual(
+#    values = cols,
+#    aesthetics = c("colour","fill"),
+#    breaks=c("Top Secret","Secret","Confidential","Missing")
+#  ) +
   theme_bw() +
   theme(text = element_text(size=15),
         axis.text.x = element_text(size=11), 
         axis.text.y = element_text(size=11), 
         #legend.title=element_blank(), 
         legend.position = c(0.1, 0.9), 
-        legend.justification = c(0.1, 0.9))
+        legend.justification = c(0.1, 0.9))   +
+  scale_fill_grey(start=0.8, end=0.2) #+
+#  scale_fill_discrete(breaks=c("Missing","Confidential","Secret","Top Secret"))
 dev.off()
 ```
 
@@ -604,8 +621,8 @@ stargazer(table_cables_n_year[c("year","n", "rel.freq")],
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-#driver = dbDriver("MySQL")
-#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+driver = dbDriver("MySQL")
+connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
 cables_db = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
 classification_doc2 <- tbl(cables_db,'classification_doc') %>%
@@ -662,8 +679,8 @@ stargazer(classification_doc2[c("classification","n", "rel.freq")],
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
 
-#driver = dbDriver("MySQL")
-#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+driver = dbDriver("MySQL")
+connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
 cables_db = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
 classification_doc3 <- tbl(cables_db,'classification_doc') %>%
@@ -678,11 +695,15 @@ classification_doc3 <- tbl(cables_db,'classification_doc') %>%
                                             ifelse(classification_id==7,"Limited Official Use", NA)
                                             )
                                     )
-                              )
+                              ),
+    classification =factor(classification, levels = c("Unclassified", "Limited Official Use", "Confidential","Secret"))
+
         ) %>%
   select(classification, month) 
 
-png("./data_analysis_output/table_cables_n_month_class.png", width = 600, height = 450)
+#cols <- c("#CCCCCC","#999999","#666666","#333333")
+
+png("./data_analysis_output/cables_n_month_class.png", width = 600, height = 450)
 ggplot(classification_doc3, aes(month)) + 
   geom_bar(aes(fill=classification)) +
   scale_x_date(breaks=scales::pretty_breaks(10)) +
@@ -691,15 +712,21 @@ ggplot(classification_doc3, aes(month)) +
           #subtitle = "Data Plotted by Year",
            y = "Number of Documents",
            x = "Month") + 
-  scale_fill_grey() +
+  scale_fill_grey(start=0.8, end=0.2) +
   theme_bw() +
   theme(text = element_text(size=15),
         axis.text.x = element_text(size=11), 
         axis.text.y = element_text(size=11), 
-        legend.title=element_blank()#, 
+        #legend.title=element_blank()#, 
         #legend.position = c(0.1, 0.9), 
         #legend.justification = c(0.1, 0.9)
-        )
+        ) + labs(fill = "Classification")  
+#scale_fill_manual(
+#    values = cols,
+#    aesthetics = c("colour","fill"),
+#    breaks=c("Secret","Confidential","Limited Official Use","Unclassified")
+#  ) 
+
 dev.off()
 ```
 
@@ -1486,18 +1513,6 @@ pop_c_y<-
   filter(1972<year & year<1980) %>%
   mutate(tpop=1000*tpop)
 
-pop_c<-
-  read_csv("./external_data/NMC_5_0/NMC_5_0.csv") %>%
-  dplyr::select("stateabb", "ccode", "year","tpop") %>%
-  filter(1972<year & year<1980) %>%
-  mutate(tpop=1000*tpop) %>%
-  groupby(ccode) %>%
-  mean_pop 
-  left_join(cable_n_states_70s_year, by = c("year"="year","ccode" = "cow_ccode", "stateabb"="cow_stateabb")) %>%
-```
-
-#Unbalanced panel
-```{r}
 nrow(pop_c_y[pop_c_y$year==1973,])
 nrow(pop_c_y[pop_c_y$year==1974,])
 nrow(pop_c_y[pop_c_y$year==1975,])
@@ -1505,10 +1520,8 @@ nrow(pop_c_y[pop_c_y$year==1976,])
 nrow(pop_c_y[pop_c_y$year==1977,])
 nrow(pop_c_y[pop_c_y$year==1978,])
 nrow(pop_c_y[pop_c_y$year==1979,])
-```
 
 ##Correlation plots
-```{r}
 DF<-pop_c_y[c("n_c_y","tpop")]
 M<-cor(DF, use = "complete.obs")
 M
@@ -1519,92 +1532,30 @@ res1 <- cor.mtest(DF, conf.level = .95)
 res2 <- cor.mtest(DF, conf.level = .99)
 
 corrplot(M, p.mat = res1$p, sig.level = .05)
-```
 
-#Negative binomial models with fixed effects for unbalanced panel
-```{r, results='asis', warning=FALSE,message=FALSE}
-setwd("/Users/clarahsuong/chronos_data_intro")
-
-#coef_test(fixed_rep_a, vcov = "CR1", cluster = "individual", test = "naive-t")
-
-fixed_rep_m <- pglm(n_c_y~
-                   dip_rep_m#+
-                   #dip_focus+
-                   #dip_rep_a+
-                   #politicalappointee_year+
-                   #performanceMU_year+
-                   #bi_PRE+
-                   #bi_SOS+
-                   #evt_n_c_y
-               ,
-               data=us_dip_c_y, 
-               index=c("cow_ccode", "year"), 
-               family = negbin, 
-              effect = "twoways",
-               model="within", 
-               method = "nr",
-               print.level = 0
-              )
-m_rep_m=summary(fixed_rep_m)
-m_rep_m
-
-htmlreg(list(fixed_rep_m, 
-             fixed_rep_m2,
-             fixed_rep_app, 
-             fixed_vis1,
-             fixed_evt), 
-    custom.coef.names = c("(Intercept)", 
-                          "US Diplomatic Representation",
-                          "US Diplomatic Focus",
-                          "US Ambassador is a political appointee",
-                          "Number of US Presidential Visits",
-                          "Number of US Diplomatic Events"),
-    file = "./data_analysis_output/pgml_us_dip_c_y.html", 
-    caption = "Negative Binomial Regression of Tag Traffic with Fixed Effects (Unit: Country-Year)", 
-    caption.above= TRUE,     
-    inline.css = FALSE, doctype = TRUE, html.tag = TRUE, 
-    head.tag = TRUE, body.tag = TRUE)
-#unlink("texreg.doc")
-
-table_us_dip_comp<-
-  us_dip_c_y %>%
-  filter(dip_rep_m==0 & dip_rep_a==0 
-         & evt_n_c_y==0
-         ) %>% #Note that the variable dip_rep_m=0 for South Vietnam, which is inaccurate
-  arrange(desc(n_c_y)) %>%
-  top_n(n = 20, wt = n_c_y) 
-
-stargazer(table_us_dip_comp[c("year",
-                              "cow_statename",
-                               "n_c_y",
-                              "dip_rep_m",
-                              "dip_focus",
-                              "politicalappointee_year",
-                              "bi_PRE",
-                              "evt_n_c_y")],
-          type = "html", 
-          #flip = TRUE,
-          summary = FALSE,
-          rownames = FALSE,
-          title="Comparison of Variables on US Diplomacy", 
-          digits=1, 
-          out="./data_analysis_output/us_dip_comp.html",
-          covariate.labels=c("Year", 
-                             "Country", 
-                             "Number of Cables Tagged",
-                             "US Diplomatic Representation",
-                            "US Diplomatic Focus",
-                            "US Ambassador is a political appointee",
-                            "Number of US Presidential Visits",
-                            "Number of US Diplomatic Events")
-          )
-
-table_cable_n_tpop_state_year_top20<- 
+table_pop_c_y_top20<- 
   pop_c_y %>%
-  filter(cow_ccode!=2) %>%
-  mutate(rel.freq = paste0(round(100 * n_c_y/total_n, 2), "%")) %>%
-  arrange(desc(n_c_y)) %>%
-  top_n(n = 20, wt = n_c_y)
+  filter(ccode!=2) %>%
+  group_by(ccode,cow_statename) %>%
+  summarise(mean_tpop=mean(tpop, na.rm = TRUE)#, 
+            ) %>%
+  ungroup() %>%
+#  mutate(total_tpop=sum(tpop)) %>%
+#  mutate(rel.freq = paste0(round(100 * tpop/total_tpop, 2), "%")) %>%
+  arrange(desc(mean_tpop)) %>%
+  top_n(n = 20, wt = mean_tpop)
+
+table_pop_c_y_bottom20<- 
+  pop_c_y %>%
+  filter(ccode!=2) %>%
+  group_by(ccode,cow_statename) %>%
+  summarise(mean_tpop=mean(tpop, na.rm = TRUE)#, 
+            ) %>%
+  ungroup() %>%
+#  mutate(total_tpop=sum(tpop)) %>%
+#  mutate(rel.freq = paste0(round(100 * tpop/total_tpop, 2), "%")) %>%
+  arrange(desc(mean_tpop)) %>%
+  top_n(n = -20, wt = mean_tpop)
 ```
 
 
