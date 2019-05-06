@@ -1,6 +1,8 @@
 ##Links:
 
-- Draft: https://docs.google.com/document/d/1Ve1iRiVqhL-jpKFY5x0dZGl_irYQpUeW_FmIMxlinK8/edit?usp=sharing
+- Draft 2: https://docs.google.com/document/d/1_yMZO-WhsHLMMWu1R8zxX8INTZWhJnrZ1AH2LgI2rP0/edit?usp=sharing
+
+- Draft 1: https://docs.google.com/document/d/1Ve1iRiVqhL-jpKFY5x0dZGl_irYQpUeW_FmIMxlinK8/edit?usp=sharing
 
 - Acknowledgement: https://docs.google.com/document/d/1jLFf_z5skf4Rdn1SEIHy0kCT5XLDVHqbRoq_EQx5048/edit?usp=sharing
 
