@@ -1,5 +1,5 @@
 
-Non-U.S. Country-Years with Highest Tag Traffic
+Non-US Country-Years with Highest Tag Traffic
 ===================================================================
 Year       Tagged Country       Number of Cables Relative Frequency
 -------------------------------------------------------------------

@@ -1,0 +1,26 @@
+
+Country TAG Traffic vs. Population
+=====================================================================================================================
+Top 20 Countries in Country TAG Traffic Rank in Country TAG Traffic Top 20 Countries in Population Rank in Population
+---------------------------------------------------------------------------------------------------------------------
+Soviet Union                                         1                          China                      1         
+United Kingdom                                       2                          India                      2         
+German Democratic Republic                           3                       Soviet Union                  3         
+Japan                                                4                        Indonesia                    4         
+Israel                                               5                          Japan                      5         
+Egypt                                                6                          Brazil                     6         
+France                                               7                        Bangladesh                   7         
+Mexico                                               8                         Pakistan                    8         
+Canada                                               9                         Nigeria                     9         
+Iran                                                10                 German Federal Republic             10        
+Italy                                               11                          Mexico                     11        
+China                                               12                      United Kingdom                 12        
+India                                               13                          Italy                      13        
+Thailand                                            14                          France                     14        
+German Federal Republic                             15                       Philippines                   15        
+South Korea                                         16                         Thailand                    16        
+Turkey                                              17                          Turkey                     17        
+South Africa                                        18                         Vietnam                     18        
+Philippines                                         19                          Egypt                      19        
+Poland                                              20                          Spain                      20        
+---------------------------------------------------------------------------------------------------------------------
