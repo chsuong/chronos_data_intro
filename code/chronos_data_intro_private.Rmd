@@ -88,6 +88,7 @@ library(janitor)
 ##External dataset sources:
 * Download the following datasets in the folder "external_data"
 * COW country codes (cow): http://www.correlatesofwar.org/data-sets/cow-country-codes/cow-country-codes/at_download/file
+* National Material Capabilities (v5.0) (nmc): http://www.correlatesofwar.org/data-sets/national-material-capabilities
 
 #Data Overview
 
@@ -113,9 +114,9 @@ db_docs <- function(mydb) {
   return(docs)
 }
 
-#db_docs('declassification_cables')
-load("/Users/clarahsuong/Dropbox/nyu_postdoc/chronos_data_intro/raw_data/cfpf_docs.RData")
-cables_docs<-docs
+#cables_docs<-db_docs('declassification_cables')
+load("/Users/clarahsuong/Dropbox/nyu_postdoc/chronos_data_intro/raw_data/cables_docs.RData")
+#cables_docs<-docs
 load("/Users/clarahsuong/Dropbox/nyu_postdoc/chronos_data_intro/raw_data/frus_docs.RData")
 #frus_docs<-db_docs('declassification_frus') 
 clinton_docs<-db_docs('declassification_clinton') 
@@ -269,22 +270,57 @@ cables_db = dbConnect(driver,host='history-lab.org', password='XreadF403', user=
 dbListTables(cables_db)
 
 tbl(cables_db,'tag_doc') %>%
-  filter(doc_id=="1976BAGHDA01815")
+  filter(doc_id=="1976ECBRU06967")
 
 tbl(cables_db,'tags') %>%
-  filter(id==117 | id==118 | id==441)
+  filter(id==68 | id==88 | id==183)
 
 tbl(cables_db,'country_doc') %>%
-  filter(doc_id=="1976BAGHDA01815")
+  filter(doc_id=="1976ECBRU06967")
 
-tbl(cables_db,'countries') %>%
-  filter(id==368)
+#tbl(cables_db,'countries') %>%
+#  filter(id==368)
 
 tbl(cables_db,'topic_doc') %>%
-  filter(doc_id=="1976BAGHDA01815")
+  filter(topic_id==49) %>%
+  collect() %>%
+  arrange(desc(topic_score))
+
+tbl(cables_db,'topic_doc') %>%
+  filter(doc_id=="1976ECBRU06967")
+
+# filter(doc_id=="1974ANKARA09370") 
+#filter(doc_id=="1979HELSIN05792")
+#filter(doc_id=="1977BONN09230")
+#filter(doc_id=="1976DACCA06254")
+#filter(doc_id=="1978OTTAWA02190")
+#filter(doc_id=="1977TEHRAN01142")
+#filter(doc_id=="1977TEHRAN01142")
+#filter(doc_id=="1978BANGKO19143") 
 
 tbl(cables_db,'topics') %>%
-  filter(id==31 | id==15 | id==0)
+  filter(id==49 | id==30 | id==56)
+
+topics<-tbl(cables_db,'topics') %>% collect()
+
+#a<-tbl(cables_db,'topic_doc') %>%
+#  group_by(doc_id) %>%
+#  summarise(median = median(topic_score, na.rm = TRUE)) %>%
+#  ungroup() %>%
+#  arrange(desc(median)) %>%
+#  collect()
+
+topic_doc<-tbl(cables_db,'topic_doc') %>% collect()
+
+a<-topic_doc %>%
+  group_by(doc_id) %>%
+  summarise(median = median(topic_score, na.rm = TRUE)) %>%
+  ungroup() %>%
+  arrange(desc(median)) 
+
+tbl(cables_db,'topic_doc') %>% arrange(desc(topic_score)) %>% print(n=40)
+
+
 ```
 
 ##Frequency Tables
@@ -294,12 +330,6 @@ tbl(cables_db,'topics') %>%
 #driver = dbDriver("MySQL")
 #connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
 #mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
-
-#cfpf_docs <- tbl(mydb,'docs') %>%
-#  collect()
-#save("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
-#load("/Users/clarahsuong/Dropbox/nyu_postdoc/ner/dataset_intro/cfpf_docs.RData")
-#cables_docs<-docs
 
 setwd("/Users/clarahsuong/chronos_data_intro")
 
@@ -887,7 +917,7 @@ cable_n_states_70s_year<-
   mutate(total_n = sum(n_c_y)) %>%
   arrange(year, cow_ccode)
 #save(cable_n_states_70s_year, file = "./data/cable_n_states_70s_year.RData")
-#load("./data/cable_n_states_70s_year.RData")
+#load("/Users/clarahsuong/chronos_data_intro/data/cable_n_states_70s_year.RData")
 
 #Tag traffic by state, excluding 0 cables by some countries that did not exist in the 1970s. Note that this does include the cables tagged with US. 
 cable_n_states_70s<-
@@ -900,8 +930,8 @@ cable_n_states_70s<-
   ungroup() %>%
   mutate(total_n = sum(n_c)) %>%
   arrange(desc(n_c))
-#save(states_70s, file = "./data/cable_n_states_70s.RData")
-#load("./data/cable_n_states_70s.RData")
+#save(cable_n_states_70s, file = "./data/cable_n_states_70s.RData")
+#load("/Users/clarahsuong/chronos_data_intro/data/data/cable_n_states_70s.RData")
 
 #Note that the total ns for each dataset for differs a bit.
 ```
@@ -952,11 +982,12 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 options(scipen=10000000)
 
 p1<-ggplot(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,], aes(n_c_y)) +
-  geom_freqpoly(bins = 300) +
+  #geom_freqpoly(bins = 300) +
+  geom_histogram(bins = 300) +
   theme_bw() +
   labs(title = "By Country-Year",
        #subtitle = "Data Plotted by Year",
-    y = "Frequency",
+    y = "Count",
     x = "Country TAG Traffic"
     ) + 
     theme(text = element_text(size=12),
@@ -968,11 +999,12 @@ p1<-ggplot(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,], aes(n
         )
 
 p2<-ggplot(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,], aes(n_c)) +
-  geom_freqpoly(bins = 300) +
+  geom_histogram(bins = 300) +
+  #  geom_freqpoly(bins = 300) +
   theme_bw() +
   labs(title = "By Country",
        #subtitle = "Data Plotted by Year",
-    y = "Frequency",
+    y = "Count",
     x = "Country TAG Traffic") + 
     theme(text = element_text(size=12),
         axis.text.x = element_text(size=11), 
@@ -1311,40 +1343,6 @@ stargazer(table_tag_state_bottom20[c("cow_statename", "n_c","rel.freq")],
 #          digits=1, 
 #          out="./data_analysis_output/table_tag_state_bottom20.html",
 #          covariate.labels=c("Country", "Number of Cables", "Relative Frequency"))
-```
-
-###FIGURE: Country TAG Traffic of Key Non-US Countries by Month
-```{r}
-setwd("/Users/clarahsuong/chronos_data_intro")
-
-coi_5_list<-table_tag_state_top20$cow_ccode[1:5]
-
-coi_5<-
-  country_tag_doc2  %>%
-  filter(cow_ccode %in% coi_5_list) %>%
-  mutate(cow_statename= replace(cow_statename, cow_statename=="Russia", "Soviet Union"),
-         cow_statename= replace(cow_statename, cow_statename=="German Democratic Republic", "East Germany"), 
-        #cow_statename2=ifelse(cow_ccode %in% coi_5_list, cow_statename, "Other"),
-        date=as_date(date),          
-        month = as_date(cut(date, breaks = "month")))
-
-#png("./data_analysis_output/tag_key5.png", width = 600, height = 450)
-ggplot(coi_5, aes(month)) + 
-  geom_bar(aes(fill=cow_statename)) +
-  scale_x_date(breaks=scales::pretty_breaks(10)) +
-  scale_y_continuous(breaks=scales::pretty_breaks(10)) +
-  labs(y = "Country Tag Traffic Volume",
-       x = "Month") + 
-  scale_fill_grey() +
-  theme_bw() +
-  theme(text = element_text(size=15),
-        axis.text.x = element_text(size=11), 
-        axis.text.y = element_text(size=11), 
-        legend.title=element_blank()#, 
-        #legend.position = c(0.95, 0.05), 
-        #legend.justification = c(0.95, 0.05)
-        )
-#dev.off()
 ```
 
 ###TABLE: Country TAG Traffic vs. Total Population
