@@ -319,8 +319,6 @@ a<-topic_doc %>%
   arrange(desc(median)) 
 
 tbl(cables_db,'topic_doc') %>% arrange(desc(topic_score)) %>% print(n=40)
-
-
 ```
 
 ##Frequency Tables
@@ -664,7 +662,6 @@ stargazer(table_frus_n_year[c("year","n", "rel.freq")],
 #          )
 ```
 
-
 ###TABLE: Number of Documents by Classification
 ```{r}
 setwd("/Users/clarahsuong/chronos_data_intro")
@@ -706,15 +703,15 @@ stargazer(table_frus_n_class[c("classification","n", "rel.freq")],
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 #Re-connect to the database
-#driver = dbDriver("MySQL")
-#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+driver = dbDriver("MySQL")
+connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
 mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
 #A list of countries according to our database
 countries<-
   tbl(mydb, 'countries') %>% 
   collect() 
-#This table is incomplete. Note that there is no tag for "South Vietnam" but tag "VM" (id: 557) for "Vietnam" according to this table. The 1976 TAGS manual lists VN (tag_id 1976) for "Viet-Nam (North)"and VS (tag_id 1973) for "Viet-Nam (South)". There is also no tag_id for Serbia, Montenegro, Croatia, Azerbaijan. 
+#This table is incomplete. Note that there is no tag for "South Vietnam" but tag "VM" (id: 557) for "Vietnam" according to this table. The 1976 TAGS manual lists VN (tag_id=1976) for "Viet-Nam (North)"and VS (tag_id=1973) for "Viet-Nam (South)". There is also no tag_id and 2 country_ids for Ethiopia. 
 #US is included.
 #Note there is no tag_id for the Soviet Union but one for Russia.
 
@@ -738,7 +735,7 @@ all_states<-
          cow_statename=statenme) %>%   
   mutate(cow_stateabb=as.character(cow_stateabb),
          cow_statename=as.character(cow_statename)) %>%
-  distinct() #There are duplicates. e.g. countries that existed, disappeared, and then re-appeared. 
+  distinct() #There are duplicates. e.g. countries that existed, disappeared, and then re-appeared. Serbia is also not on the list.
 
 #Generate a dataframe for all (former and existing) countries for years 1973-79. Note that this includes the US.
 all_states_year<-
@@ -767,9 +764,9 @@ states_70s<-
 ##Create a dataframe linking country codes and tag_ids
 ```{r}
 #Re-connect to the database
-#driver = dbDriver("MySQL")
-#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
-#mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
+driver = dbDriver("MySQL")
+connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
 #Note that this includes country codes and tag_id for the US.
 country_code_tag<-
@@ -782,7 +779,7 @@ country_code_tag<-
   
 #Check whether the variable "country_id" in the table "countries" is from ISO 3166.
 #cow_ccode for Vietnam should be 816, not 817 (error in the package countrycode) and cow_ccode for West Germany (German Federal Republic) should be 260.
-#iso3n for South Vietnam should not be 704 (country code of Vietnam) but 714 (error in the R package countrycode). The tag_id for South Vietnam is missing.
+#iso3n for South Vietnam should not be 704 (country code of Vietnam) but 714 (error in the R package countrycode). The tag_id for South Vietnam is missing. There are two country ids and only one tag_id for Ethiopia.
 #country_code_tag$cowid2<-countrycode(country_code_tag$country_id, 'iso3n', 'cown')
 
 all(country_code_tag$country_id %in% iso_3166$Numeric)
@@ -794,9 +791,11 @@ country_code_tag[country_code_tag$country_id %in% setdiff(country_code_tag$count
 #Replace the wrong COW country codes and tag_id
 country_code_tag<-
   country_code_tag %>%
-  mutate(cow_ccode= replace(cow_ccode, name=="Vietnam", 816)) %>% #Fix cow_ccode for Vietnam 
-  mutate(cow_ccode= replace(cow_ccode, name=="West Germany", 260)) %>% #Fix cow_ccode for West Germany (German Federal Republic) 
-  mutate(tag_id=replace(tag_id, name=="South Vietnam", 1973)) %>% #Insert tag_id for South Vietnam
+  mutate(cow_ccode= replace(cow_ccode, name=="Vietnam", 816), #Fix cow_ccode for Vietnam 
+         cow_ccode= replace(cow_ccode, name=="West Germany", 260), #Fix cow_ccode for West Germany (German Federal Republic) 
+         tag_id=replace(tag_id, name=="South Vietnam", 1973), #Insert tag_id for South Vietnam
+         tag_id=replace(tag_id, name=="Ethiopia", 405),
+         country_id=replace(country_id, name=="Ethiopia", 231)) %>% #Insert tag_id for South Vietnam
   rbind(c("Vietnam",
           0,
           1,
@@ -806,12 +805,15 @@ country_code_tag<-
           704
           )
         ) %>% #Insert the second tag_id value (1976) for Vietnam 
+  filter(!(name=="Panama" & country_id==590)) %>%
   mutate(cow_ccode=as.integer(cow_ccode),
          tag_id=as.integer(tag_id)) %>%
-  inner_join(all_states, by="cow_ccode") %>% #Include state names from the COW list of all states that have ever existed.
+  right_join(all_states, by="cow_ccode") %>% #Include state names from the COW list of all states that have ever existed.
   rename(country_name=name) %>% 
-  filter(!is.na(cow_ccode) & !is.na(tag_id)) %>% #Drop the observations with missing COW country code and missing tag_id.
-  dplyr::select(-iso3n) #Note the 2 tags for Vietnam.
+  #filter(!is.na(cow_ccode) & !is.na(tag_id)) %>% #Drop the observations with missing COW country code and missing tag_id.
+  dplyr::select(-iso3n, -country_name,-deleted,-official) %>% #Note the 2 tags for Vietnam.
+  distinct()
+
 ```
 
 ##Tag traffic by country-year and by country
@@ -822,9 +824,9 @@ country_code_tag<-
 setwd("/Users/clarahsuong/chronos_data_intro")
 
 #Re-connect to the database
-#driver = dbDriver("MySQL")
-#connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
-#mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
+driver = dbDriver("MySQL")
+connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
+mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
 
 tags<-
   tbl(mydb, 'tags') %>% 
@@ -854,20 +856,19 @@ country_tag_doc2<-
          date=lubridate::ymd(date), 
          ym=as.yearmon(paste(year, month),"%Y %m")
          ) 
-#save(country_tag_doc2, file = "./data/country_tag_doc2.RData")
+save(country_tag_doc2, file = "./data/country_tag_doc2.RData")
 #load("./data/country_tag_doc2.RData")
 
-cable_n_country_day<-
+cable_n_day<-
   country_tag_doc2 %>%
   group_by(.dots=c("cow_ccode", 
                    "cow_statename",
                    "country_id", 
-                   "country_name", 
                    "date")) %>%
   tally() %>%
   ungroup()
-#save(cable_n_country_day, file = "./data/cable_n_country_day.RData")
-#load("./data/cable_n_country_day.RData") #Note that this includes neither all dates nor all countries on the COW list.
+save(cable_n_day, file = "./data/cable_n_day.RData")
+#load("./data/cable_n_day.RData") #Note that this includes neither all dates nor all countries on the COW list.
 
 #The table country_doc attempts to add West Germany and South Vietnam based on regex matching in body.
 #country_doc<-
@@ -931,7 +932,7 @@ cable_n_states_70s<-
   mutate(total_n = sum(n_c)) %>%
   arrange(desc(n_c))
 #save(cable_n_states_70s, file = "./data/cable_n_states_70s.RData")
-#load("/Users/clarahsuong/chronos_data_intro/data/data/cable_n_states_70s.RData")
+#load("/Users/clarahsuong/chronos_data_intro/data/cable_n_states_70s.RData")
 
 #Note that the total ns for each dataset for differs a bit.
 ```
@@ -1392,5 +1393,8 @@ stargazer(table_tag_pop_state_top20_comp,
 #          covariate.labels=c("Top 20 Countries<br>in Country TAG Traffic", "Rank<br>in Country TAG Traffic", #"Rank<br>in Mean Population"))
 ```
 
+country_tag_doc2$cow_statename[country_tag_doc2$cow_statename %in% setdiff(cable_n_all_states$cow_statename, cable_n_states_70s$cow_statename)]
+
+setdiff(cable_n_all_states$cow_statename, cable_n_states_70s$cow_statename)
 
 
