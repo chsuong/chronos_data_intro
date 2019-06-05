@@ -16,8 +16,6 @@ library(ISOcodes) #A package for ISO country codes
 library(stargazer)
 library(rowr) #For cbind with fill
 library(gridExtra)
-library(janitor)
-
 
 #Set-up
 
@@ -133,6 +131,7 @@ sum(sum(is.na(cables_docs$body)),
     sum(is.na(cpdoc_docs$body))
     )
 
+#Section 4.4. Central Foreign Policy File Collection
 
 #Appendix A: Details on the CFPF Corpus
 
