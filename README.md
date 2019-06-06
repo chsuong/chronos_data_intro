@@ -1,5 +1,7 @@
 ##Links:
 
+- See the Dropbox folder "NSF_data_paper" for the latest draft.
+
 - Draft 3: https://docs.google.com/document/d/112puJABcmJV4vB2uIpplm0JbO1SvQ8_7dZxnOpJPz8U/edit?usp=sharing
 
 - Draft 2: https://docs.google.com/document/d/1_yMZO-WhsHLMMWu1R8zxX8INTZWhJnrZ1AH2LgI2rP0/edit?usp=sharing
