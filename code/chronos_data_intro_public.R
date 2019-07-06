@@ -730,3 +730,5 @@ stargazer(table_tag_pop_state_top20_comp,
           title="Country TAG Traffic vs. Population", 
           out="./data_analysis_output/table_tag_pop_state_top20_comp.txt",
           covariate.labels=c("Top 20 Countries in Country TAG Traffic", "Rank in Country TAG Traffic", "Rank in Mean Population"))
+
+
