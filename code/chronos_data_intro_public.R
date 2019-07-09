@@ -29,11 +29,6 @@ setwd("/Users/clarahsuong/chronos_data_intro")
 
 #Data Overview
 
-##List the collections
-driver = dbDriver("MySQL")
-connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
-dbGetQuery(connection, 'show databases;')
-
 ##Download the table "docs" for all databases
 ###Store the tables "docs" for database "declassification_cables" and "declassification_frus" 
 ###somewhere with no file size restriction.
@@ -171,18 +166,8 @@ stargazer(classification_doc2[c("classification","n", "rel.freq")],
           out="./data_analysis_output/table_cables_n_class.txt",
           covariate.labels=c("Classification","Number of Documents", "Relative Frequency"))
 
-#FRUS Collection
-##FIGURE: Number of Documents by Year and Classification
-frus_n_date<-
-  frus_docs %>%
-  dplyr::select(id, date, classification) %>%
-  mutate(date=as_date(date), 
-         Classification = replace_na(classification, "Missing"),
-         year = as_date(cut(date, breaks = "year")),
-         Classification =factor(Classification, levels = c("Missing", "Confidential","Secret","Top Secret")))
-
-##Frequency Tables 
-###TABLE: Number of Documents with Non-Missing Values by Variable
+#Appendix B: Details on the FRUS Corpus
+##TABLE 5: Number of FRUS Documents with Non-Missing Values by Variable
 C1<-c("collection",
       "id",
       "body",
@@ -222,29 +207,7 @@ stargazer(table_frus_n_na,
 )
 
 
-###TABLE: Number of Documents by Year
-table_frus_n_year<-
-  frus_docs %>%
-  mutate(year=lubridate::year(date)) %>%
-  group_by(year) %>%
-  tally() %>%
-  mutate(total_n = sum(n),
-         rel.freq = paste0(round(100 * n/total_n, 2), "%")) %>%
-  ungroup() %>% 
-  adorn_totals("row")
-
-stargazer(table_frus_n_year[c("year","n", "rel.freq")],
-          summary = FALSE,
-          rownames = FALSE,
-          type = "text", 
-          title="Number of Documents By Year", 
-          digits=1, 
-          out="./data_analysis_output/table_frus_n_year.txt",
-          covariate.labels=c("Year","Number of Documents", "Relative Frequency")
-)
-
-
-###TABLE: Number of Documents by Classification
+##TABLE 6: Number of FRUS Documents by Classification Level
 table_frus_n_class<-
   frus_docs %>%
   mutate(year=lubridate::year(date)) %>%
@@ -264,7 +227,7 @@ stargazer(table_frus_n_class[c("classification","n", "rel.freq")],
           out="./data_analysis_output/table_frus_n_class.txt",
           covariate.labels=c("Classification","Number of Documents", "Relative Frequency"))
 
-#Country TAG Traffic
+#Appendix C: Summary Statistics of Country TAG Traffic
 
 ##Examine the different country codes across datasets
 mydb = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname='declassification_cables')
