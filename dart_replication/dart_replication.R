@@ -78,7 +78,7 @@ frus_year<-
 
 
 load("frus_year.RData")
-ggplot(frus_year, aes(year)) + 
+ggplot(frus_year, aes(year2)) + 
   geom_bar(aes(fill=classification)) +
   scale_x_date(breaks=scales::pretty_breaks(10)) +
   scale_y_continuous(breaks=scales::pretty_breaks(10)) +
