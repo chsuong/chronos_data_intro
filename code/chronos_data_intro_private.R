@@ -743,7 +743,7 @@ stargazer(as.data.frame(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,])[c(
 options(scipen=10000000)
 
 p1<-ggplot(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,], aes(n_c_y)) +
-  geom_freqpoly(bins = 300) +
+  geom_bar(aes(fill=classification)) +
   theme_bw() +
   labs(title = "By Country-Year",
        #subtitle = "Data Plotted by Year",
@@ -759,7 +759,7 @@ p1<-ggplot(cable_n_states_70s_year[cable_n_states_70s_year$cow_ccode!=2,], aes(n
   )
 
 p2<-ggplot(cable_n_states_70s[cable_n_states_70s$cow_ccode!=2,], aes(n_c)) +
-  geom_freqpoly(bins = 300) +
+  geom_bar(aes(fill=classification)) +
   theme_bw() +
   labs(title = "By Country",
        #subtitle = "Data Plotted by Year",
@@ -823,7 +823,7 @@ options(scipen=10000000)
 
 p3<-
   ggplot(cable_n_all_states_year, aes(n_c_y)) +
-  geom_freqpoly(bins = 300) +
+  geom_bar(aes(fill=classification)) +
   theme_bw() +
   labs(title = "By Country-Year",
        #subtitle = "Data Plotted by Year",
@@ -839,7 +839,7 @@ p3<-
 
 p4<-
   ggplot(cable_n_all_states, aes(n_c)) +
-  geom_freqpoly(bins = 300) +
+  geom_bar(aes(fill=classification)) +
   theme_bw() +
   labs(title = "By Country",
        #subtitle = "Data Plotted by Year",

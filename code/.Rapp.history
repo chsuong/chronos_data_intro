@@ -1,0 +1,2 @@
+load("/Users/clarahsuong/Dropbox/nyu_postdoc/chronos_data_intro/raw_data/frus_docs.RData")
+load("/Users/clarahsuong/Dropbox/nyu_postdoc/chronos_data_intro/raw_data/cables_docs.RData")
