@@ -99,8 +99,6 @@ ggplot(frus_year, aes(year)) +
 ##FIGURE 7: Country TAG Traffic at Country-Year and Country Levels
 
 load("non_us_country_tag_traffic_year.RData")
-load("non_us_country_tag_traffic.RData")
-
 p1<-ggplot(non_us_country_tag_traffic_year, aes(n_c_y)) +
   geom_histogram(bins = 300) +
   theme_bw() +
@@ -110,6 +108,8 @@ p1<-ggplot(non_us_country_tag_traffic_year, aes(n_c_y)) +
   theme(text = element_text(size=12),
         axis.text.x = element_text(size=11),
         axis.text.y = element_text(size=11))
+
+load("non_us_country_tag_traffic.RData")
 p2<-ggplot(non_us_country_tag_traffic, aes(n_c)) +
   geom_histogram(bins = 300) +
   theme_bw() +

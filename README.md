@@ -1,6 +1,6 @@
 ##Notes:
-- "Private" versions of the files/code inlcude passwords to access the SQL database, hence the need for "public" versions.
-- "Public" versions are currently being revised.
+- "Private" versions of the files/code include passwords to access the SQL database, hence the need for "public" versions.
+- The code and data in the folder 
 
 ##Links:
 - See the Dropbox folder "NSF_data_paper" for the latest draft.
