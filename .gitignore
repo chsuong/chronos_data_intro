@@ -3,5 +3,6 @@
 .RData
 .Ruserdata
 .Rmd
-/data/*
-/code/*
+data/
+code/
+external_data/
