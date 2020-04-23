@@ -3,6 +3,7 @@
 .RData
 .Ruserdata
 .Rmd
+.md
 data/
 code/
 external_data/
