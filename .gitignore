@@ -3,7 +3,7 @@
 .RData
 .Ruserdata
 .Rmd
-.md
+old_README.md
 data/
 data_analysis_output/
 code/
