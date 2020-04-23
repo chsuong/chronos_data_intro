@@ -1,8 +1,0 @@
-
-Summary Statistics of Country TAG Traffic by Country (Incl. Former Countries and the US)
-==========================================================================
-Statistic               N    Mean   St. Dev. Min Pctl(25) Pctl(75)   Max  
---------------------------------------------------------------------------
-COW Codes of Countries 217  460.0    257.1    2    271      670      990  
-Country TAG Traffic    217 15,540.2 50,372.7  0    277     18,121  705,142
---------------------------------------------------------------------------
