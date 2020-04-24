@@ -48,37 +48,10 @@ ggplot(cfpf_month, aes(month)) +
 
 ##FIGURE 5: Number of FRUS Documents by Year (NEEDS RAYMOND'S INPUT)
 
-##########THE FOLLOWING NEEDS TO BE SCRUBBED AFTER RAYMOND'S INPUT
-library(RMySQL)
-driver = dbDriver("MySQL")
-connection = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader')
-
-db_docs <- function(mydb) {
-  mydb2 = dbConnect(driver,host='history-lab.org', password='XreadF403', user='de_reader', dbname=mydb)
-  docs<-dplyr::tbl(mydb2, 'docs') %>% 
-    collect(n = Inf) %>%
-    distinct()
-  return(docs)
-}
-
-library(lubridate)
-frus_docs<-db_docs('declassification_frus')
-frus_year<-
-  frus_docs %>%
-  dplyr::select(id, date, classification) %>%
-  rename(doc_id = id) %>%
-  mutate(classification = replace_na(classification, "Missing"),
-         year = as_date(cut(as_date(date), breaks = "year")),
-         classification =factor(classification, levels = c("Missing", "Confidential","Secret","Top Secret"))) %>%
- select(-date) %>%
- drop_na()
-
-#save(frus_year,file="frus_year.RData")
-##########
-
-
 load("frus_year.RData")
-ggplot(frus_year, aes(year2)) + 
+frus_year<-subset(frus_year,year(year)>=1860)
+png("frus_n_year_class.png", width = 6, height = 6, units = 'in', res = 300)
+ggplot(frus_year, aes(year)) + 
   geom_bar(aes(fill=classification)) +
   scale_x_date(breaks=scales::pretty_breaks(10)) +
   scale_y_continuous(breaks=scales::pretty_breaks(10)) +
@@ -92,7 +65,7 @@ ggplot(frus_year, aes(year2)) +
         legend.justification = c(0.1, 0.9))   +
   scale_fill_grey(start=0.8, end=0.2) + 
   labs(fill = "Classification")  
-
+dev.off()
 
 #5.1. Descriptive Statistics of Country TAG Traffic
 
@@ -127,6 +100,21 @@ grid.arrange(p1, p2)
 
 ##FIGURE 8: Political and Economic Cables to OAPEC Nations as a Proportion of All Such Cables Sent (NEEDS RAYMOND'S INPUT)
 
+load("oapec.RData")
+
+
+y=.12
+png("oapec_perc.png", width = 6, height = 6, units = 'in', res = 300)
+par(mar = c(2,4,2,2))
+ts.plot(weekly.data$oapec.perc, gpars=list(xaxt="n"),xlab="", ylab="OAPEC cables/all cables (Pol/Econ)")
+abline(v=21, col="black", lty=3)
+text (x=4, y=y, "Oil embargo\nbegins", cex=.5)
+abline(v=42, col="black", lty=3)
+text (x=60, y=y, "Oil embargo\nends", cex=.5)
+xyear<-c(1, 53, 105, 157, 209, 261,313)
+#title("Pol/Econ cables to OAPEC as % of All Pol/Econ cables", cex=.5)
+axis(1, at=xyear,labels=c("6/1/73", "5/31/74", "5/30/75", "5/28/76", "5/27/77", "5/26/78", "5/25/79"), cex.axis=.7)
+dev.off()
 
 
 
